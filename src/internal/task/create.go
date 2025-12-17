@@ -19,7 +19,7 @@ func Create(title string, description string, priority Priority, reminderAt time
 		UpdatedAt:   now,
 	}
 
-	store := NewJSONStore("../data/")
+	store := NewJSONStore("/home/andre/Documentos/Git/advisor-go/src/data/tasks.json")
 
 	tasks, err := store.Load()
 	if err != nil {

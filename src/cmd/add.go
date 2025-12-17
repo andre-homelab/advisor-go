@@ -38,7 +38,7 @@ var addCmd = &cobra.Command{
 		priority := parsePriority(priorityStr)
 
 		fmt.Println("\nInforme a data/hora do lembrete no formato:")
-		fmt.Println("  02/01/2006 15:04  (ex: 25/12/2025 09:30)")
+		fmt.Println("  02/01/2006 15:04")
 		reminderStr, err := promptNonEmpty(reader, "Lembrar em: ")
 
 		if err != nil {
@@ -109,7 +109,6 @@ func parsePriority(input string) task.Priority {
 }
 
 func parseReminder(input string) (time.Time, error) {
-	layout := "20/07/2005 15:00"
-
-	return time.ParseInLocation(layout, strings.TrimSpace(input), time.Local)
+	layout := "02/01/2006 15:04"
+	return time.ParseInLocation(layout, input, time.Local)
 }
