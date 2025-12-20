@@ -17,7 +17,7 @@ func List() {
 
 	fmt.Println("-=== TAREFAS EXISTENTES ===-")
 
-	for i := 0; i < len(tasks); i++ {
+	for i := range tasks {
 		fmt.Printf("ID: %s \n| > Título: %s\n| > Descrição: %s\n| > Prioridade: %s \n| > Lembrete: %s", tasks[i].ID, tasks[i].Title, tasks[i].Description, tasks[i].Priority, tasks[i].ReminderAt)
 		fmt.Print("\n")
 	}
