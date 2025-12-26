@@ -1,6 +1,6 @@
 package main
 
-import cmd "github.com/andre-felipe-wonsik-alves/advisor-go/cli"
+import cmd "github.com/andre-felipe-wonsik-alves/src/inputs/cli"
 
 func main() {
 	cmd.Execute()

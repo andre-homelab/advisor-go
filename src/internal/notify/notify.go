@@ -3,7 +3,7 @@ package notify
 import (
 	"fmt"
 
-	"github.com/andre-felipe-wonsik-alves/advisor-go/internal/task"
+	"github.com/andre-felipe-wonsik-alves/src/internal/task"
 )
 
 func NotifyToTerminal(t task.Task) {

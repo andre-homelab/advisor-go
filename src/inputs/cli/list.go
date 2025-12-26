@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/andre-felipe-wonsik-alves/advisor-go/internal/task"
+	"github.com/andre-felipe-wonsik-alves/src/internal/task"
 	"github.com/spf13/cobra"
 )
 
