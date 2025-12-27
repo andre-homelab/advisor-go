@@ -1,0 +1,273 @@
+basePath: /api/v1
+definitions:
+  handler.CreateTaskRequest:
+    properties:
+      description:
+        example: Apresentar projeto ao time
+        type: string
+      priority:
+        enum:
+        - low
+        - medium
+        - high
+        example: high
+        type: string
+      reminder_at:
+        example: "2025-12-27T15:00:00Z"
+        type: string
+      title:
+        example: Reunião importante
+        type: string
+    type: object
+  handler.ErrorResponse:
+    properties:
+      error:
+        example: Tarefa não encontrada
+        type: string
+      message:
+        example: ID inválido fornecido
+        type: string
+    type: object
+  handler.UpdateTaskRequest:
+    properties:
+      description:
+        type: string
+      done:
+        type: boolean
+      priority:
+        enum:
+        - low
+        - medium
+        - high
+        type: string
+      reminder_at:
+        type: string
+      title:
+        type: string
+    type: object
+  task.Priority:
+    enum:
+    - low
+    - medium
+    - high
+    type: string
+    x-enum-varnames:
+    - PriorityLow
+    - PriorityMedium
+    - PriorityHigh
+  task.Task:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      done:
+        type: boolean
+      id:
+        type: string
+      priority:
+        $ref: '#/definitions/task.Priority'
+      reminder_at:
+        type: string
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: seu-email@exemplo.com
+    name: Suporte API
+  description: API REST para gerenciamento de tarefas com lembretes
+  license:
+    name: MIT
+    url: http://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Task Notification API
+  version: "1.0"
+paths:
+  /tasks:
+    get:
+      description: Retorna lista de todas as tarefas cadastradas
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/task.Task'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Listar todas as tarefas
+      tags:
+      - tasks
+    post:
+      consumes:
+      - application/json
+      description: Adiciona uma nova tarefa ao sistema
+      parameters:
+      - description: Dados da tarefa
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/task.Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Criar nova tarefa
+      tags:
+      - tasks
+  /tasks/{id}:
+    delete:
+      description: Remove uma tarefa do sistema
+      parameters:
+      - description: ID da tarefa
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Tarefa removida com sucesso
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Deletar tarefa
+      tags:
+      - tasks
+    get:
+      description: Retorna uma tarefa específica pelo ID
+      parameters:
+      - description: ID da tarefa
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/task.Task'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Buscar tarefa por ID
+      tags:
+      - tasks
+    put:
+      consumes:
+      - application/json
+      description: Atualiza dados de uma tarefa existente
+      parameters:
+      - description: ID da tarefa
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados para atualização
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/task.Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Atualizar tarefa
+      tags:
+      - tasks
+  /tasks/{id}/complete:
+    patch:
+      description: Marca uma tarefa específica como concluída
+      parameters:
+      - description: ID da tarefa
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/task.Task'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Marcar tarefa como concluída
+      tags:
+      - tasks
+  /tasks/due:
+    get:
+      description: Retorna todas as tarefas cujo lembrete já passou
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/task.Task'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Listar tarefas vencidas
+      tags:
+      - tasks
+swagger: "2.0"
