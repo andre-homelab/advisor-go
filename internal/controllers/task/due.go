@@ -3,10 +3,12 @@ package task
 import (
 	"fmt"
 	"time"
+
+	env "github.com/andre-felipe-wonsik-alves/internal"
 )
 
 func Due() ([]Task, error) {
-	jsonPath := Env("CANONICAL_TASKS_PATH", "../data/tasks.json")
+	jsonPath := env.Env("CANONICAL_TASKS_PATH", "../data/tasks.json")
 	store := NewJSONStore(jsonPath)
 
 	tasks, err := store.Load()

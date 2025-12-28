@@ -2,10 +2,12 @@ package task
 
 import (
 	"fmt"
+
+	env "github.com/andre-felipe-wonsik-alves/internal"
 )
 
 func List() {
-	jsonPath := Env("CANONICAL_TASKS_PATH", "../data/tasks.json")
+	jsonPath := env.Env("CANONICAL_TASKS_PATH", "../data/tasks.json")
 	store := NewJSONStore(jsonPath)
 
 	tasks, err := store.Load()

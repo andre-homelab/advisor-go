@@ -1,4 +1,4 @@
-package task
+package env
 
 import (
 	"log"
@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	if err := godotenv.Load("../.env"); err != nil {
+	if err := godotenv.Load(); err != nil {
 		log.Println("Aviso: não foi possível carregar .env (talvez ele não exista?):", err)
 	}
 }

@@ -3,7 +3,7 @@ package notify
 import (
 	"fmt"
 
-	"github.com/andre-felipe-wonsik-alves/src/internal/task"
+	"github.com/andre-felipe-wonsik-alves/internal/controllers/task"
 )
 
 func NotifyToTerminal(t task.Task) {

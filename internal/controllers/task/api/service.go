@@ -1,8 +1,10 @@
-package task
+package api
 
 import (
 	"errors"
 	"time"
+
+	"github.com/andre-felipe-wonsik-alves/internal/controllers/task"
 )
 
 var (
@@ -11,18 +13,18 @@ var (
 )
 
 type Service struct {
-	store Store
+	store task.Store
 }
 
-func NewService(store Store) *Service {
+func NewService(store task.Store) *Service {
 	return &Service{store: store}
 }
 
-func (s *Service) List() ([]Task, error) {
+func (s *Service) List() ([]task.Task, error) {
 	return s.store.Load()
 }
 
-func (s *Service) GetByID(id string) (*Task, error) {
+func (s *Service) GetByID(id string) (*task.Task, error) {
 	tasks, err := s.store.Load()
 	if err != nil {
 		return nil, err
@@ -37,13 +39,13 @@ func (s *Service) GetByID(id string) (*Task, error) {
 	return nil, ErrTaskNotFound
 }
 
-func (s *Service) Create(title, description string, priority Priority, reminderAt time.Time) (*Task, error) {
+func (s *Service) Create(title, description string, priority task.Priority, reminderAt time.Time) (*task.Task, error) {
 	tasks, err := s.store.Load()
 	if err != nil {
 		return nil, err
 	}
 
-	newTask := Task{
+	newTask := task.Task{
 		ID:          generateID(),
 		Title:       title,
 		Description: description,
@@ -62,14 +64,14 @@ func (s *Service) Create(title, description string, priority Priority, reminderA
 	return &newTask, nil
 }
 
-func (s *Service) Update(id string, title, description *string, priority *Priority, reminderAt *time.Time, done *bool) (*Task, error) {
+func (s *Service) Update(id string, title, description *string, priority *task.Priority, reminderAt *time.Time, done *bool) (*task.Task, error) {
 	tasks, err := s.store.Load()
 	if err != nil {
 		return nil, err
 	}
 
 	found := false
-	var updated *Task
+	var updated *task.Task
 
 	for i := range tasks {
 		if tasks[i].ID == id {
@@ -114,7 +116,7 @@ func (s *Service) Delete(id string) error {
 	}
 
 	found := false
-	newTasks := make([]Task, 0, len(tasks))
+	newTasks := make([]task.Task, 0, len(tasks))
 
 	for _, t := range tasks {
 		if t.ID != id {
@@ -131,14 +133,14 @@ func (s *Service) Delete(id string) error {
 	return s.store.Save(newTasks)
 }
 
-func (s *Service) Complete(id string) (*Task, error) {
+func (s *Service) Complete(id string) (*task.Task, error) {
 	tasks, err := s.store.Load()
 	if err != nil {
 		return nil, err
 	}
 
 	found := false
-	var completed *Task
+	var completed *task.Task
 
 	for i := range tasks {
 		if tasks[i].ID == id {
@@ -161,14 +163,14 @@ func (s *Service) Complete(id string) (*Task, error) {
 	return completed, nil
 }
 
-func (s *Service) GetDue() ([]Task, error) {
+func (s *Service) GetDue() ([]task.Task, error) {
 	tasks, err := s.store.Load()
 	if err != nil {
 		return nil, err
 	}
 
 	now := time.Now()
-	dueTasks := make([]Task, 0)
+	dueTasks := make([]task.Task, 0)
 
 	for _, t := range tasks {
 		if !t.Done && !t.ReminderAt.IsZero() && t.ReminderAt.Before(now) {
@@ -183,26 +185,26 @@ func generateID() string {
 	return time.Now().Format("20060102150405")
 }
 
-func ParsePriority(s string) (Priority, error) {
+func ParsePriority(s string) (task.Priority, error) {
 	switch s {
 	case "low", "baixa":
-		return PriorityLow, nil
+		return task.PriorityLow, nil
 	case "medium", "media", "média":
-		return PriorityMedium, nil
+		return task.PriorityMedium, nil
 	case "high", "alta":
-		return PriorityHigh, nil
+		return task.PriorityHigh, nil
 	default:
 		return "", ErrInvalidInput
 	}
 }
 
-func PriorityToString(p Priority) string {
+func PriorityToString(p task.Priority) string {
 	switch p {
-	case PriorityLow:
+	case task.PriorityLow:
 		return "baixa"
-	case PriorityMedium:
+	case task.PriorityMedium:
 		return "média"
-	case PriorityHigh:
+	case task.PriorityHigh:
 		return "alta"
 	default:
 		return string(p)

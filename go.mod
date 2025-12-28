@@ -1,4 +1,4 @@
-module github.com/andre-felipe-wonsik-alves/src
+module github.com/andre-felipe-wonsik-alves
 
 go 1.24.4
 

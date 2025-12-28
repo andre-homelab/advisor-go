@@ -3,6 +3,8 @@ package task
 import (
 	"fmt"
 	"time"
+
+	env "github.com/andre-felipe-wonsik-alves/internal"
 )
 
 func Create(title string, description string, priority Priority, reminderAt time.Time) (Task, error) {
@@ -19,7 +21,7 @@ func Create(title string, description string, priority Priority, reminderAt time
 		UpdatedAt:   now,
 	}
 
-	jsonPath := Env("CANONICAL_TASKS_PATH", "../data/tasks.json")
+	jsonPath := env.Env("CANONICAL_TASKS_PATH", "../data/tasks.json")
 	store := NewJSONStore(jsonPath)
 
 	tasks, err := store.Load()

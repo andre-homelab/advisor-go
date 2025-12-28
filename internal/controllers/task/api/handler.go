@@ -1,21 +1,21 @@
-package handler
+package api
 
 import (
 	"encoding/json"
 	"net/http"
 	"time"
 
-	"github.com/andre-felipe-wonsik-alves/src/internal/task"
+	"github.com/andre-felipe-wonsik-alves/internal/controllers/task"
 
 	"github.com/go-chi/chi/v5"
 )
 
 type TaskHandler struct {
-	taskService *task.Service
+	taskService Service
 }
 
-func NewTaskHandler(taskService *task.Service) *TaskHandler {
-	return &TaskHandler{taskService: taskService}
+func NewTaskHandler(taskService *Service) *TaskHandler {
+	return &TaskHandler{taskService: *taskService}
 }
 
 type CreateTaskRequest struct {
@@ -76,11 +76,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	priority, err := task.ParsePriority(req.Priority)
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "Prioridade deve ser: baixa, media ou alta", nil)
-		return
-	}
+	priority := task.ParsePriority(req.Priority)
 
 	newTask, err := h.taskService.Create(req.Title, req.Description, priority, req.ReminderAt)
 	if err != nil {
@@ -105,7 +101,7 @@ func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 
 	t, err := h.taskService.GetByID(id)
 	if err != nil {
-		if err == task.ErrTaskNotFound {
+		if err == ErrTaskNotFound {
 			respondError(w, http.StatusNotFound, "Tarefa não encontrada", nil)
 			return
 		}
@@ -140,17 +136,14 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 
 	var priority *task.Priority
 	if req.Priority != nil {
-		p, err := task.ParsePriority(*req.Priority)
-		if err != nil {
-			respondError(w, http.StatusBadRequest, "Prioridade inválida", err)
-			return
-		}
+		p := task.ParsePriority(*req.Priority)
+
 		priority = &p
 	}
 
 	updated, err := h.taskService.Update(id, req.Title, req.Description, priority, req.ReminderAt, req.Done)
 	if err != nil {
-		if err == task.ErrTaskNotFound {
+		if err == ErrTaskNotFound {
 			respondError(w, http.StatusNotFound, "Tarefa não encontrada", nil)
 			return
 		}
@@ -175,7 +168,7 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 
 	err := h.taskService.Delete(id)
 	if err != nil {
-		if err == task.ErrTaskNotFound {
+		if err == ErrTaskNotFound {
 			respondError(w, http.StatusNotFound, "Tarefa não encontrada", nil)
 			return
 		}
@@ -200,7 +193,7 @@ func (h *TaskHandler) CompleteTask(w http.ResponseWriter, r *http.Request) {
 
 	completed, err := h.taskService.Complete(id)
 	if err != nil {
-		if err == task.ErrTaskNotFound {
+		if err == ErrTaskNotFound {
 			respondError(w, http.StatusNotFound, "Tarefa não encontrada", nil)
 			return
 		}

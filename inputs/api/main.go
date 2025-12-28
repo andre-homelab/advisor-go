@@ -9,9 +9,9 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
 
-	_ "github.com/andre-felipe-wonsik-alves/src/docs" // importa docs gerados pelo swag
-	"github.com/andre-felipe-wonsik-alves/src/internal/handler"
-	"github.com/andre-felipe-wonsik-alves/src/internal/task"
+	_ "github.com/andre-felipe-wonsik-alves/docs" // importa docs gerados pelo swag
+	"github.com/andre-felipe-wonsik-alves/internal/controllers/task"
+	"github.com/andre-felipe-wonsik-alves/internal/controllers/task/api"
 )
 
 // @title           Task Notification API
@@ -33,8 +33,8 @@ func main() {
 	taskStore := task.NewJSONStore("data/tasks.json")
 
 	// Inicializa service e handlers
-	taskService := task.NewService(taskStore)
-	taskHandler := handler.NewTaskHandler(taskService)
+	taskService := api.NewService(taskStore)
+	taskHandler := api.NewTaskHandler(taskService)
 
 	// Configura router
 	r := chi.NewRouter()

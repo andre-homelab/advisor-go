@@ -1,17 +1,17 @@
-package cmd
+package cli
 
 import (
 	"fmt"
 
-	"github.com/andre-felipe-wonsik-alves/src/internal/notify"
-	"github.com/andre-felipe-wonsik-alves/src/internal/task"
+	"github.com/andre-felipe-wonsik-alves/internal/controllers/notify"
+	"github.com/andre-felipe-wonsik-alves/internal/controllers/task"
 	"github.com/spf13/cobra"
 )
 
-var dueCmd = &cobra.Command{
+var dueCli = &cobra.Command{
 	Use:   "due",
 	Short: "Verifica tarefas com vencimentos próximos/vencidos.",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cli *cobra.Command, args []string) error {
 		tasks, err := task.Due()
 
 		for i := range tasks {

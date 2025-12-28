@@ -1,6 +1,6 @@
 basePath: /api/v1
 definitions:
-  handler.CreateTaskRequest:
+  api.CreateTaskRequest:
     properties:
       description:
         example: Apresentar projeto ao time
@@ -19,7 +19,7 @@ definitions:
         example: Reunião importante
         type: string
     type: object
-  handler.ErrorResponse:
+  api.ErrorResponse:
     properties:
       error:
         example: Tarefa não encontrada
@@ -28,7 +28,7 @@ definitions:
         example: ID inválido fornecido
         type: string
     type: object
-  handler.UpdateTaskRequest:
+  api.UpdateTaskRequest:
     properties:
       description:
         type: string
@@ -102,7 +102,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/api.ErrorResponse'
       summary: Listar todas as tarefas
       tags:
       - tasks
@@ -116,7 +116,7 @@ paths:
         name: task
         required: true
         schema:
-          $ref: '#/definitions/handler.CreateTaskRequest'
+          $ref: '#/definitions/api.CreateTaskRequest'
       produces:
       - application/json
       responses:
@@ -127,11 +127,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/api.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/api.ErrorResponse'
       summary: Criar nova tarefa
       tags:
       - tasks
@@ -152,11 +152,11 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/api.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/api.ErrorResponse'
       summary: Deletar tarefa
       tags:
       - tasks
@@ -178,11 +178,11 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/api.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/api.ErrorResponse'
       summary: Buscar tarefa por ID
       tags:
       - tasks
@@ -201,7 +201,7 @@ paths:
         name: task
         required: true
         schema:
-          $ref: '#/definitions/handler.UpdateTaskRequest'
+          $ref: '#/definitions/api.UpdateTaskRequest'
       produces:
       - application/json
       responses:
@@ -212,15 +212,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/api.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/api.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/api.ErrorResponse'
       summary: Atualizar tarefa
       tags:
       - tasks
@@ -243,11 +243,11 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/api.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/api.ErrorResponse'
       summary: Marcar tarefa como concluída
       tags:
       - tasks
@@ -266,7 +266,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/api.ErrorResponse'
       summary: Listar tarefas vencidas
       tags:
       - tasks

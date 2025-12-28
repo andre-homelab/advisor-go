@@ -1,4 +1,4 @@
-package cmd
+package cli
 
 import (
 	"bufio"
@@ -7,14 +7,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/andre-felipe-wonsik-alves/src/internal/task"
+	"github.com/andre-felipe-wonsik-alves/internal/controllers/task"
+
 	"github.com/spf13/cobra"
 )
 
-var addCmd = &cobra.Command{
+var addCli = &cobra.Command{
 	Use:   "add",
 	Short: "Adiciona uma nova tarefa",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cli *cobra.Command, args []string) error {
 		reader := bufio.NewReader(os.Stdin)
 
 		title, err := promptNonEmpty(reader, "Título da tarefa (obrigatório): ")
@@ -35,7 +36,7 @@ var addCmd = &cobra.Command{
 			return err
 		}
 
-		priority := parsePriority(priorityStr)
+		priority := task.ParsePriority(priorityStr)
 
 		fmt.Println("\nInforme a data/hora do lembrete no formato:")
 		fmt.Println("  02/01/2006 15:04")
@@ -92,19 +93,6 @@ func promptNonEmpty(reader *bufio.Reader, label string) (string, error) {
 		}
 
 		fmt.Println("Campo obrigatório!")
-	}
-}
-
-func parsePriority(input string) task.Priority {
-	s := strings.ToLower(strings.TrimSpace(input))
-
-	switch s {
-	case "medium", "média":
-		return task.PriorityMedium
-	case "high", "alta":
-		return task.PriorityHigh
-	default:
-		return task.PriorityLow
 	}
 }
 

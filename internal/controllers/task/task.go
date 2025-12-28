@@ -1,6 +1,9 @@
 package task
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 type Priority string
 
@@ -19,4 +22,17 @@ type Task struct {
 	Done        bool      `json:"done"`
 	CreatedAt   time.Time `json:created_at`
 	UpdatedAt   time.Time `json:updated_at`
+}
+
+func ParsePriority(input string) Priority {
+	s := strings.ToLower(strings.TrimSpace(input))
+
+	switch s {
+	case "medium", "média":
+		return PriorityMedium
+	case "high", "alta":
+		return PriorityHigh
+	default:
+		return PriorityLow
+	}
 }
