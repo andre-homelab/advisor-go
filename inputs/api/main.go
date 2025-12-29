@@ -9,7 +9,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
 
-	_ "github.com/andre-felipe-wonsik-alves/docs" // importa docs gerados pelo swag
+	_ "github.com/andre-felipe-wonsik-alves/docs"
 	"github.com/andre-felipe-wonsik-alves/internal/controllers/task"
 	"github.com/andre-felipe-wonsik-alves/internal/controllers/task/api"
 )
@@ -19,9 +19,6 @@ import (
 // @description     API REST para gerenciamento de tarefas com lembretes
 // @termsOfService  http://swagger.io/terms/
 
-// @contact.name   Suporte API
-// @contact.email  seu-email@exemplo.com
-
 // @license.name  MIT
 // @license.url   http://opensource.org/licenses/MIT
 
@@ -29,28 +26,22 @@ import (
 // @BasePath  /api/v1
 
 func main() {
-	// Inicializa o store JSON
 	taskStore := task.NewJSONStore("data/tasks.json")
 
-	// Inicializa service e handlers
 	taskService := api.NewService(taskStore)
 	taskHandler := api.NewTaskHandler(taskService)
 
-	// Configura router
 	r := chi.NewRouter()
 
-	// Middlewares
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
 	r.Use(middleware.RequestID)
 
-	// Swagger UI
 	r.Get("/swagger/*", httpSwagger.Handler(
 		httpSwagger.URL("http://localhost:8080/swagger/doc.json"),
 	))
 
-	// Rotas da API
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Route("/tasks", func(r chi.Router) {
 			r.Get("/", taskHandler.ListTasks)
@@ -63,7 +54,6 @@ func main() {
 		})
 	})
 
-	// Health check
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
