@@ -8,7 +8,7 @@ import (
 )
 
 func Due() ([]Task, error) {
-	jsonPath := env.Env("CANONICAL_TASKS_PATH", "../data/tasks.json")
+	jsonPath := env.GetEnv("CANONICAL_TASKS_PATH", "../data/tasks.json")
 	store := NewJSONStore(jsonPath)
 
 	tasks, err := store.Load()

@@ -21,7 +21,7 @@ func Create(title string, description string, priority Priority, reminderAt time
 		UpdatedAt:   now,
 	}
 
-	jsonPath := env.Env("CANONICAL_TASKS_PATH", "../data/tasks.json")
+	jsonPath := env.GetEnv("CANONICAL_TASKS_PATH", "../data/tasks.json")
 	store := NewJSONStore(jsonPath)
 
 	tasks, err := store.Load()
