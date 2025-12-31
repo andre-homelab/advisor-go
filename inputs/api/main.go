@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"log"
@@ -12,6 +12,7 @@ import (
 	_ "github.com/andre-felipe-wonsik-alves/docs"
 	"github.com/andre-felipe-wonsik-alves/internal/controllers/task"
 	"github.com/andre-felipe-wonsik-alves/internal/controllers/task/api"
+	"github.com/andre-felipe-wonsik-alves/internal/database"
 )
 
 // @title           Task Notification API
@@ -25,7 +26,7 @@ import (
 // @host      localhost:8080
 // @BasePath  /api/v1
 
-func main() {
+func Execute() {
 	taskStore := task.NewJSONStore("data/tasks.json")
 
 	taskService := api.NewService(taskStore)
@@ -61,6 +62,15 @@ func main() {
 
 	log.Println("Servidor rodando em http://localhost:8080")
 	log.Println("Documentação disponível em http://localhost:8080/swagger/index.html")
+
+	log.Println("Testando conexão com o banco de dados")
+	_, err := database.Connect()
+
+	if err != nil {
+		log.Fatal("Erro na conexão com o banco de dados: ", err)
+	}
+
+	log.Println("Conexão com o banco estabelecida!")
 
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatal("Erro ao iniciar servidor:", err)

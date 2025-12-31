@@ -24,4 +24,5 @@ func init() {
 	mainCli.AddCommand(addCli)
 	mainCli.AddCommand(listCli)
 	mainCli.AddCommand(dueCli)
+	mainCli.AddCommand(deployApi)
 }
