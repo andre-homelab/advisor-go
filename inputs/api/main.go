@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -25,6 +26,17 @@ import (
 
 // @host      localhost:8080
 // @BasePath  /api/v1
+
+const banner = `
+ $$$$$$\   $$$$$$\           $$$$$$\  $$$$$$$\  $$\    $$\ $$$$$$\  $$$$$$\   $$$$$$\  $$$$$$$\  
+$$  __$$\ $$  __$$\         $$  __$$\ $$  __$$\ $$ |   $$ |\_$$  _|$$  __$$\ $$  __$$\ $$  __$$\ 
+$$ /  \__|$$ /  $$ |        $$ /  $$ |$$ |  $$ |$$ |   $$ |  $$ |  $$ /  \__|$$ /  $$ |$$ |  $$ |
+$$ |$$$$\ $$ |  $$ |$$$$$$\ $$$$$$$$ |$$ |  $$ |\$$\  $$  |  $$ |  \$$$$$$\  $$ |  $$ |$$$$$$$  |
+$$ |\_$$ |$$ |  $$ |\______|$$  __$$ |$$ |  $$ | \$$\$$  /   $$ |   \____$$\ $$ |  $$ |$$  __$$< 
+$$ |  $$ |$$ |  $$ |        $$ |  $$ |$$ |  $$ |  \$$$  /    $$ |  $$\   $$ |$$ |  $$ |$$ |  $$ |
+\$$$$$$  | $$$$$$  |        $$ |  $$ |$$$$$$$  |   \$  /   $$$$$$\ \$$$$$$  | $$$$$$  |$$ |  $$ |
+ \______/  \______/         \__|  \__|\_______/     \_/    \______| \______/  \______/ \__|  \__|
+`
 
 func Execute() {
 	taskStore := task.NewJSONStore("data/tasks.json")
@@ -60,11 +72,12 @@ func Execute() {
 		w.Write([]byte("OK"))
 	})
 
-	log.Println("Servidor rodando em http://localhost:8080")
-	log.Println("Documentação disponível em http://localhost:8080/swagger/index.html")
+	fmt.Print("\n\n")
+	fmt.Print(banner)
+	fmt.Print("\n\n")
 
 	log.Println("Testando conexão com o banco de dados")
-	_, err := database.Connect()
+	db, err := database.Connect()
 
 	if err != nil {
 		log.Fatal("Erro na conexão com o banco de dados: ", err)
@@ -72,7 +85,16 @@ func Execute() {
 
 	log.Println("Conexão com o banco estabelecida!")
 
+	log.Println("Iniciando migrations...")
+	database.AutoMigrate(db)
+
+	log.Println("Migration concluída com sucesso!")
+
+	log.Println("Servidor rodando em http://localhost:8080")
+	log.Println("Documentação disponível em http://localhost:8080/swagger/index.html")
+
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatal("Erro ao iniciar servidor:", err)
 	}
+	fmt.Print("\n\n")
 }
