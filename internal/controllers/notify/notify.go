@@ -3,10 +3,10 @@ package notify
 import (
 	"fmt"
 
-	"github.com/andre-felipe-wonsik-alves/internal/controllers/task"
+	"github.com/andre-felipe-wonsik-alves/internal/models"
 )
 
-func NotifyToTerminal(t task.Task) {
+func NotifyToTerminal(t models.Task) {
 	fmt.Printf("\n[ TAREFA VENCIDA ]\nTítulo: %s \n| > Prioridade: %s\n", t.Title, t.Priority)
 
 	if t.Description != "" {

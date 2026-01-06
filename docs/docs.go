@@ -10,10 +10,7 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "termsOfService": "http://swagger.io/terms/",
-        "contact": {
-            "name": "Suporte API",
-            "email": "seu-email@exemplo.com"
-        },
+        "contact": {},
         "license": {
             "name": "MIT",
             "url": "http://opensource.org/licenses/MIT"
@@ -39,7 +36,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/task.Task"
+                                "$ref": "#/definitions/models.Task"
                             }
                         }
                     },
@@ -78,42 +75,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/task.Task"
+                            "$ref": "#/definitions/models.Task"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/api.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/tasks/due": {
-            "get": {
-                "description": "Retorna todas as tarefas cujo lembrete já passou",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tasks"
-                ],
-                "summary": "Listar tarefas vencidas",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/task.Task"
-                            }
                         }
                     },
                     "500": {
@@ -148,64 +116,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/task.Task"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Atualiza dados de uma tarefa existente",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tasks"
-                ],
-                "summary": "Atualizar tarefa",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID da tarefa",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Dados para atualização",
-                        "name": "task",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.UpdateTaskRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/task.Task"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
+                            "$ref": "#/definitions/models.Task"
                         }
                     },
                     "404": {
@@ -257,6 +168,63 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "patch": {
+                "description": "Atualiza dados de uma tarefa existente",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Atualizar tarefa",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID da tarefa",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Dados para atualização",
+                        "name": "task",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.PatchTaskRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Task"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/tasks/{id}/complete": {
@@ -282,7 +250,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/task.Task"
+                            "$ref": "#/definitions/models.Task"
                         }
                     },
                     "404": {
@@ -341,7 +309,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.UpdateTaskRequest": {
+        "api.PatchTaskRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -366,7 +334,7 @@ const docTemplate = `{
                 }
             }
         },
-        "task.Priority": {
+        "models.Priority": {
             "type": "string",
             "enum": [
                 "low",
@@ -379,10 +347,10 @@ const docTemplate = `{
                 "PriorityHigh"
             ]
         },
-        "task.Task": {
+        "models.Task": {
             "type": "object",
             "properties": {
-                "createdAt": {
+                "created_at": {
                     "type": "string"
                 },
                 "description": {
@@ -395,7 +363,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "priority": {
-                    "$ref": "#/definitions/task.Priority"
+                    "$ref": "#/definitions/models.Priority"
                 },
                 "reminder_at": {
                     "type": "string"
@@ -403,7 +371,7 @@ const docTemplate = `{
                 "title": {
                     "type": "string"
                 },
-                "updatedAt": {
+                "updated_at": {
                     "type": "string"
                 }
             }

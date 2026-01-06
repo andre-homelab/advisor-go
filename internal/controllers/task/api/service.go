@@ -1,10 +1,13 @@
 package api
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/andre-felipe-wonsik-alves/internal/controllers/task"
+	"github.com/andre-felipe-wonsik-alves/internal/models"
 )
 
 var (
@@ -20,33 +23,26 @@ func NewService(store task.Store) *Service {
 	return &Service{store: store}
 }
 
-func (s *Service) List() ([]task.Task, error) {
-	return s.store.Load()
+func (s *Service) List(ctx context.Context) ([]models.Task, error) {
+	tasks, err := s.store.List(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao listar tarefas: %w", err)
+	}
+	return tasks, nil
 }
 
-func (s *Service) GetByID(id string) (*task.Task, error) {
-	tasks, err := s.store.Load()
+func (s *Service) GetByID(ctx context.Context, id string) (*models.Task, error) {
+	task, err := s.store.GetByID(ctx, id)
+
 	if err != nil {
-		return nil, err
+		return nil, ErrTaskNotFound
 	}
 
-	for i := range tasks {
-		if tasks[i].ID == id {
-			return &tasks[i], nil
-		}
-	}
-
-	return nil, ErrTaskNotFound
+	return task, nil
 }
 
-func (s *Service) Create(title, description string, priority task.Priority, reminderAt time.Time) (*task.Task, error) {
-	tasks, err := s.store.Load()
-	if err != nil {
-		return nil, err
-	}
-
-	newTask := task.Task{
-		ID:          generateID(),
+func (s *Service) Create(ctx context.Context, title, description string, priority models.Priority, reminderAt time.Time) (*models.Task, error) {
+	newTask := models.Task{
 		Title:       title,
 		Description: description,
 		Priority:    priority,
@@ -56,155 +52,49 @@ func (s *Service) Create(title, description string, priority task.Priority, remi
 		UpdatedAt:   time.Now(),
 	}
 
-	tasks = append(tasks, newTask)
-	if err := s.store.Save(tasks); err != nil {
+	if err := s.store.Create(ctx, &newTask); err != nil {
 		return nil, err
 	}
 
 	return &newTask, nil
 }
 
-func (s *Service) Update(id string, title, description *string, priority *task.Priority, reminderAt *time.Time, done *bool) (*task.Task, error) {
-	tasks, err := s.store.Load()
-	if err != nil {
-		return nil, err
-	}
-
-	found := false
-	var updated *task.Task
-
-	for i := range tasks {
-		if tasks[i].ID == id {
-			if title != nil {
-				tasks[i].Title = *title
-			}
-			if description != nil {
-				tasks[i].Description = *description
-			}
-			if priority != nil {
-				tasks[i].Priority = *priority
-			}
-			if reminderAt != nil {
-				tasks[i].ReminderAt = *reminderAt
-			}
-			if done != nil {
-				tasks[i].Done = *done
-			}
-
-			tasks[i].UpdatedAt = time.Now()
-			updated = &tasks[i]
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		return nil, ErrTaskNotFound
-	}
-
-	if err := s.store.Save(tasks); err != nil {
-		return nil, err
-	}
-
-	return updated, nil
+func (s *Service) Patch(ctx context.Context, id string, changes map[string]any) (*models.Task, error) {
+	return s.store.Patch(ctx, id, changes)
 }
 
-func (s *Service) Delete(id string) error {
-	tasks, err := s.store.Load()
-	if err != nil {
-		return err
-	}
-
-	found := false
-	newTasks := make([]task.Task, 0, len(tasks))
-
-	for _, t := range tasks {
-		if t.ID != id {
-			newTasks = append(newTasks, t)
-		} else {
-			found = true
-		}
-	}
-
-	if !found {
-		return ErrTaskNotFound
-	}
-
-	return s.store.Save(newTasks)
+func (s *Service) Delete(ctx context.Context, id string) error {
+	return s.store.Delete(ctx, id)
 }
 
-func (s *Service) Complete(id string) (*task.Task, error) {
-	tasks, err := s.store.Load()
-	if err != nil {
-		return nil, err
-	}
+func (s *Service) Complete(ctx context.Context, id string) (*models.Task, error) {
+	changes := map[string]any{}
 
-	found := false
-	var completed *task.Task
+	changes["done"] = true
 
-	for i := range tasks {
-		if tasks[i].ID == id {
-			tasks[i].Done = true
-			tasks[i].UpdatedAt = time.Now()
-			completed = &tasks[i]
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		return nil, ErrTaskNotFound
-	}
-
-	if err := s.store.Save(tasks); err != nil {
-		return nil, err
-	}
-
-	return completed, nil
+	return s.store.Patch(ctx, id, changes)
 }
 
-func (s *Service) GetDue() ([]task.Task, error) {
-	tasks, err := s.store.Load()
-	if err != nil {
-		return nil, err
-	}
-
-	now := time.Now()
-	dueTasks := make([]task.Task, 0)
-
-	for _, t := range tasks {
-		if !t.Done && !t.ReminderAt.IsZero() && t.ReminderAt.Before(now) {
-			dueTasks = append(dueTasks, t)
-		}
-	}
-
-	return dueTasks, nil
-}
-
-func generateID() string {
-	return time.Now().Format("20060102150405")
-}
-
-func ParsePriority(s string) (task.Priority, error) {
+func ParsePriority(s string) (models.Priority, error) {
 	switch s {
 	case "low", "baixa":
-		return task.PriorityLow, nil
+		return models.PriorityLow, nil
 	case "medium", "media", "média":
-		return task.PriorityMedium, nil
+		return models.PriorityMedium, nil
 	case "high", "alta":
-		return task.PriorityHigh, nil
+		return models.PriorityHigh, nil
 	default:
 		return "", ErrInvalidInput
 	}
 }
 
-func PriorityToString(p task.Priority) string {
+func PriorityToString(p models.Priority) string {
 	switch p {
-	case task.PriorityLow:
+	case models.PriorityLow:
 		return "baixa"
-	case task.PriorityMedium:
+	case models.PriorityMedium:
 		return "média"
-	case task.PriorityHigh:
+	case models.PriorityHigh:
 		return "alta"
 	default:
 		return string(p)

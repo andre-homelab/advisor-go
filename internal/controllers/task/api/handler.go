@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/andre-felipe-wonsik-alves/internal/controllers/task"
-
 	"github.com/go-chi/chi/v5"
 )
 
@@ -25,7 +24,7 @@ type CreateTaskRequest struct {
 	ReminderAt  time.Time `json:"reminder_at" example:"2025-12-27T15:00:00Z"`
 }
 
-type UpdateTaskRequest struct {
+type PatchTaskRequest struct {
 	Title       *string    `json:"title,omitempty"`
 	Description *string    `json:"description,omitempty"`
 	Priority    *string    `json:"priority,omitempty" enums:"low,medium,high"`
@@ -42,11 +41,12 @@ type ErrorResponse struct {
 // @Description Retorna lista de todas as tarefas cadastradas
 // @Tags        tasks
 // @Produce     json
-// @Success     200 {array} task.Task
+// @Success     200 {array} models.Task
 // @Failure     500 {object} ErrorResponse
 // @Router      /tasks [get]
 func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
-	tasks, err := h.taskService.List()
+	ctx := r.Context()
+	tasks, err := h.taskService.List(ctx)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Erro ao carregar tarefas", err)
 		return
@@ -60,7 +60,7 @@ func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 // @Accept      json
 // @Produce     json
 // @Param       task body CreateTaskRequest true "Dados da tarefa"
-// @Success     201 {object} task.Task
+// @Success     201 {object} models.Task
 // @Failure     400 {object} ErrorResponse
 // @Failure     500 {object} ErrorResponse
 // @Router      /tasks [post]
@@ -78,7 +78,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 	priority := task.ParsePriority(req.Priority)
 
-	newTask, err := h.taskService.Create(req.Title, req.Description, priority, req.ReminderAt)
+	newTask, err := h.taskService.Create(r.Context(), req.Title, req.Description, priority, req.ReminderAt)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Erro ao criar tarefa", err)
 		return
@@ -92,14 +92,14 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 // @Tags        tasks
 // @Produce     json
 // @Param       id path string true "ID da tarefa"
-// @Success     200 {object} task.Task
+// @Success     200 {object} models.Task
 // @Failure     404 {object} ErrorResponse
 // @Failure     500 {object} ErrorResponse
 // @Router      /tasks/{id} [get]
 func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	t, err := h.taskService.GetByID(id)
+	t, err := h.taskService.GetByID(r.Context(), id)
 	if err != nil {
 		if err == ErrTaskNotFound {
 			respondError(w, http.StatusNotFound, "Tarefa não encontrada", nil)
@@ -113,45 +113,66 @@ func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, t)
 }
 
-// @Summary     Atualizar tarefa
+// @Summary     Atualizar campos específicos de uma tarefa
 // @Description Atualiza dados de uma tarefa existente
 // @Tags        tasks
 // @Accept      json
 // @Produce     json
 // @Param       id path string true "ID da tarefa"
-// @Param       task body UpdateTaskRequest true "Dados para atualização"
-// @Success     200 {object} task.Task
+// @Param       task body PatchTaskRequest true "Dados para atualização"
+// @Success     200 {object} models.Task
 // @Failure     400 {object} ErrorResponse
 // @Failure     404 {object} ErrorResponse
 // @Failure     500 {object} ErrorResponse
-// @Router      /tasks/{id} [put]
-func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
+// @Router      /tasks/{id} [patch]
+func (h *TaskHandler) PatchTask(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	var req UpdateTaskRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "JSON inválido", err)
+	var req PatchTaskRequest
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	if err := dec.Decode(&req); err != nil {
+		http.Error(w, "JSON inválido", http.StatusBadRequest)
 		return
 	}
 
-	var priority *task.Priority
+	changes := map[string]any{}
+
+	if req.Title != nil {
+		changes["title"] = *req.Title
+	}
+	if req.Description != nil {
+		changes["description"] = *req.Description
+	}
+	if req.Done != nil {
+		changes["done"] = *req.Done
+	}
 	if req.Priority != nil {
-		p := task.ParsePriority(*req.Priority)
-
-		priority = &p
+		changes["priority"] = *req.Priority
+	}
+	if req.ReminderAt != nil {
+		changes["reminderAt"] = *req.ReminderAt
 	}
 
-	updated, err := h.taskService.Update(id, req.Title, req.Description, priority, req.ReminderAt, req.Done)
-	if err != nil {
-		if err == ErrTaskNotFound {
-			respondError(w, http.StatusNotFound, "Tarefa não encontrada", nil)
-			return
-		}
-		respondError(w, http.StatusInternalServerError, "Erro ao atualizar tarefa", err)
+	if len(changes) == 0 {
+		http.Error(w, "nenhum campo para atualizar", http.StatusBadRequest)
 		return
 	}
 
-	respondJSON(w, http.StatusOK, updated)
+	task, err := h.taskService.Patch(r.Context(), id, changes)
+
+	if err != nil {
+		http.Error(w, "erro ao atualizar", http.StatusInternalServerError)
+		return
+	}
+	if task == nil {
+		http.Error(w, "não encontrado", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(task)
 }
 
 // @Summary     Deletar tarefa
@@ -166,7 +187,7 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	err := h.taskService.Delete(id)
+	err := h.taskService.Delete(r.Context(), id)
 	if err != nil {
 		if err == ErrTaskNotFound {
 			respondError(w, http.StatusNotFound, "Tarefa não encontrada", nil)
@@ -184,14 +205,14 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 // @Tags        tasks
 // @Produce     json
 // @Param       id path string true "ID da tarefa"
-// @Success     200 {object} task.Task
+// @Success     200 {object} models.Task
 // @Failure     404 {object} ErrorResponse
 // @Failure     500 {object} ErrorResponse
 // @Router      /tasks/{id}/complete [patch]
 func (h *TaskHandler) CompleteTask(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	completed, err := h.taskService.Complete(id)
+	completed, err := h.taskService.Complete(r.Context(), id)
 	if err != nil {
 		if err == ErrTaskNotFound {
 			respondError(w, http.StatusNotFound, "Tarefa não encontrada", nil)
@@ -208,18 +229,18 @@ func (h *TaskHandler) CompleteTask(w http.ResponseWriter, r *http.Request) {
 // @Description Retorna todas as tarefas cujo lembrete já passou
 // @Tags        tasks
 // @Produce     json
-// @Success     200 {array} task.Task
+// @Success     200 {array} models.Task
 // @Failure     500 {object} ErrorResponse
 // @Router      /tasks/due [get]
-func (h *TaskHandler) GetDueTasks(w http.ResponseWriter, r *http.Request) {
-	dueTasks, err := h.taskService.GetDue()
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, "Erro ao buscar tarefas vencidas", err)
-		return
-	}
+// func (h *TaskHandler) GetDueTasks(w http.ResponseWriter, r *http.Request) {
+// 	dueTasks, err := h.taskService.GetDue()
+// 	if err != nil {
+// 		respondError(w, http.StatusInternalServerError, "Erro ao buscar tarefas vencidas", err)
+// 		return
+// 	}
 
-	respondJSON(w, http.StatusOK, dueTasks)
-}
+// 	respondJSON(w, http.StatusOK, dueTasks)
+// }
 
 func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")

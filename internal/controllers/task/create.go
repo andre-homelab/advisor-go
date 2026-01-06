@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"time"
 
-	env "github.com/andre-felipe-wonsik-alves/internal"
+	"github.com/andre-felipe-wonsik-alves/internal/models"
 )
 
-func Create(title string, description string, priority Priority, reminderAt time.Time) (Task, error) {
+func Create(title string, description string, priority models.Priority, reminderAt time.Time) (models.Task, error) {
 	now := time.Now()
 
-	newTask := Task{
+	newTask := models.Task{
 		ID:          fmt.Sprintf("%d", now.UnixNano()),
 		Title:       title,
 		Description: description,
@@ -21,19 +21,22 @@ func Create(title string, description string, priority Priority, reminderAt time
 		UpdatedAt:   now,
 	}
 
-	jsonPath := env.GetEnv("CANONICAL_TASKS_PATH", "../data/tasks.json")
-	store := NewJSONStore(jsonPath)
+	// jsonPath := env.GetEnv("CANONICAL_TASKS_PATH", "../data/tasks.json")
+	// store := NewJSONStore(jsonPath)
 
-	tasks, err := store.Load()
-	if err != nil {
-		return newTask, fmt.Errorf("erro ao carregar tarefas: %w", err)
-	}
+	// tasks, err := store.Load()
+	// if err != nil {
+	// 	return newTask, fmt.Errorf("erro ao carregar tarefas: %w", err)
+	// }
 
-	tasks = append(tasks, newTask)
+	// tasks = append(tasks, newTask)
 
-	if err := store.Save(tasks); err != nil {
-		return newTask, fmt.Errorf("erro ao salvar tarefas: %w", err)
-	}
+	// if err := store.Save(tasks); err != nil {
+	// 	return newTask, fmt.Errorf("erro ao salvar tarefas: %w", err)
+	// }
 
+	// return newTask, nil
+
+	fmt.Println("Create")
 	return newTask, nil
 }

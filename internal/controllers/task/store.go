@@ -1,67 +1,53 @@
 package task
 
 import (
-	"encoding/json"
-	"errors"
-	"os"
-	"sync"
+	"context"
+
+	"github.com/andre-felipe-wonsik-alves/internal/models"
 )
 
 type Store interface {
-	Load() ([]Task, error)
-	Save([]Task) error
+	Create(ctx context.Context, task *models.Task) error
+	GetByID(ctx context.Context, id string) (*models.Task, error)
+	List(ctx context.Context) ([]models.Task, error)
+	Patch(ctx context.Context, id string, changes map[string]any) (*models.Task, error)
+	Delete(ctx context.Context, id string) error
 }
 
-type JSONStore struct {
-	path string
-	mu   sync.Mutex
+type DBTaskStore struct {
+	repo DBRepository
 }
 
-func NewJSONStore(path string) *JSONStore {
-	return &JSONStore{path: path}
+type DBRepository interface {
+	Create(ctx context.Context, task *models.Task) error
+	GetByID(ctx context.Context, id string) (*models.Task, error)
+	List(ctx context.Context) ([]models.Task, error)
+	Patch(ctx context.Context, id string, changes map[string]any) (*models.Task, error)
+	Delete(ctx context.Context, id string) error
 }
 
-func (s *JSONStore) Load() ([]Task, error) {
-	s.mu.Lock()
-
-	defer s.mu.Unlock()
-
-	if _, err := os.Stat(s.path); errors.Is(err, os.ErrNotExist) {
-		return []Task{}, nil
+func NewDBTaskStore(repo DBRepository) *DBTaskStore {
+	return &DBTaskStore{
+		repo: repo,
 	}
-
-	data, err := os.ReadFile(s.path)
-
-	if err != nil {
-		return nil, err
-	}
-
-	var tasks []Task
-
-	if len(data) == 0 {
-		return []Task{}, nil
-	}
-
-	if err := json.Unmarshal(data, &tasks); err != nil {
-		return nil, err
-	}
-
-	return tasks, nil
 }
 
-func (s *JSONStore) Save(tasks []Task) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *DBTaskStore) Create(ctx context.Context, task *models.Task) error {
+	return s.repo.Create(ctx, task)
+}
 
-	data, err := json.MarshalIndent(tasks, "", " ")
+func (s *DBTaskStore) GetByID(ctx context.Context, id string) (*models.Task, error) {
+	return s.repo.GetByID(ctx, id)
+}
 
-	if err != nil {
-		return err
-	}
+func (s *DBTaskStore) List(ctx context.Context) ([]models.Task, error) {
+	return s.repo.List(ctx)
+}
 
-	if err := os.MkdirAll("data", 0o755); err != nil {
-		return err
-	}
+func (s *DBTaskStore) Patch(ctx context.Context, id string, changes map[string]any) (*models.Task, error) {
+	return s.repo.Patch(ctx, id, changes)
+}
 
-	return os.WriteFile(s.path, data, 0o644)
+func (s *DBTaskStore) Delete(ctx context.Context, id string) error {
+	return s.repo.Delete(ctx, id)
 }

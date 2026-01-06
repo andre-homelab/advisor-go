@@ -13,6 +13,7 @@ import (
 	_ "github.com/andre-felipe-wonsik-alves/docs"
 	"github.com/andre-felipe-wonsik-alves/internal/controllers/task"
 	"github.com/andre-felipe-wonsik-alves/internal/controllers/task/api"
+	"github.com/andre-felipe-wonsik-alves/internal/controllers/task/repository"
 	"github.com/andre-felipe-wonsik-alves/internal/database"
 )
 
@@ -27,19 +28,25 @@ import (
 // @host      localhost:8080
 // @BasePath  /api/v1
 
-const banner = `
- $$$$$$\   $$$$$$\           $$$$$$\  $$$$$$$\  $$\    $$\ $$$$$$\  $$$$$$\   $$$$$$\  $$$$$$$\  
-$$  __$$\ $$  __$$\         $$  __$$\ $$  __$$\ $$ |   $$ |\_$$  _|$$  __$$\ $$  __$$\ $$  __$$\ 
-$$ /  \__|$$ /  $$ |        $$ /  $$ |$$ |  $$ |$$ |   $$ |  $$ |  $$ /  \__|$$ /  $$ |$$ |  $$ |
-$$ |$$$$\ $$ |  $$ |$$$$$$\ $$$$$$$$ |$$ |  $$ |\$$\  $$  |  $$ |  \$$$$$$\  $$ |  $$ |$$$$$$$  |
-$$ |\_$$ |$$ |  $$ |\______|$$  __$$ |$$ |  $$ | \$$\$$  /   $$ |   \____$$\ $$ |  $$ |$$  __$$< 
-$$ |  $$ |$$ |  $$ |        $$ |  $$ |$$ |  $$ |  \$$$  /    $$ |  $$\   $$ |$$ |  $$ |$$ |  $$ |
-\$$$$$$  | $$$$$$  |        $$ |  $$ |$$$$$$$  |   \$  /   $$$$$$\ \$$$$$$  | $$$$$$  |$$ |  $$ |
- \______/  \______/         \__|  \__|\_______/     \_/    \______| \______/  \______/ \__|  \__|
-`
-
 func Execute() {
-	taskStore := task.NewJSONStore("data/tasks.json")
+	printBanner()
+
+	log.Println("Testando conexão com o banco de dados")
+	db, err := database.Connect()
+
+	if err != nil {
+		log.Fatal("Erro na conexão com o banco de dados: ", err)
+	}
+
+	log.Println("Conexão com o banco estabelecida!")
+
+	log.Println("Iniciando migrations...")
+	database.AutoMigrate(db)
+
+	log.Println("Migration concluída com sucesso!")
+
+	dbStore := repository.NewDBStore(db)
+	taskStore := task.NewDBTaskStore(dbStore)
 
 	taskService := api.NewService(taskStore)
 	taskHandler := api.NewTaskHandler(taskService)
@@ -60,10 +67,9 @@ func Execute() {
 			r.Get("/", taskHandler.ListTasks)
 			r.Post("/", taskHandler.CreateTask)
 			r.Get("/{id}", taskHandler.GetTask)
-			r.Put("/{id}", taskHandler.UpdateTask)
+			r.Patch("/{id}", taskHandler.PatchTask)
 			r.Delete("/{id}", taskHandler.DeleteTask)
 			r.Patch("/{id}/complete", taskHandler.CompleteTask)
-			r.Get("/due", taskHandler.GetDueTasks)
 		})
 	})
 
@@ -72,29 +78,28 @@ func Execute() {
 		w.Write([]byte("OK"))
 	})
 
-	fmt.Print("\n\n")
-	fmt.Print(banner)
-	fmt.Print("\n\n")
-
-	log.Println("Testando conexão com o banco de dados")
-	db, err := database.Connect()
-
-	if err != nil {
-		log.Fatal("Erro na conexão com o banco de dados: ", err)
-	}
-
-	log.Println("Conexão com o banco estabelecida!")
-
-	log.Println("Iniciando migrations...")
-	database.AutoMigrate(db)
-
-	log.Println("Migration concluída com sucesso!")
-
 	log.Println("Servidor rodando em http://localhost:8080")
 	log.Println("Documentação disponível em http://localhost:8080/swagger/index.html")
 
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatal("Erro ao iniciar servidor:", err)
 	}
+	fmt.Print("\n\n")
+}
+
+func printBanner() {
+	const banner = `
+ $$$$$$\   $$$$$$\           $$$$$$\  $$$$$$$\  $$\    $$\ $$$$$$\  $$$$$$\   $$$$$$\  $$$$$$$\  
+$$  __$$\ $$  __$$\         $$  __$$\ $$  __$$\ $$ |   $$ |\_$$  _|$$  __$$\ $$  __$$\ $$  __$$\ 
+$$ /  \__|$$ /  $$ |        $$ /  $$ |$$ |  $$ |$$ |   $$ |  $$ |  $$ /  \__|$$ /  $$ |$$ |  $$ |
+$$ |$$$$\ $$ |  $$ |$$$$$$\ $$$$$$$$ |$$ |  $$ |\$$\  $$  |  $$ |  \$$$$$$\  $$ |  $$ |$$$$$$$  |
+$$ |\_$$ |$$ |  $$ |\______|$$  __$$ |$$ |  $$ | \$$\$$  /   $$ |   \____$$\ $$ |  $$ |$$  __$$< 
+$$ |  $$ |$$ |  $$ |        $$ |  $$ |$$ |  $$ |  \$$$  /    $$ |  $$\   $$ |$$ |  $$ |$$ |  $$ |
+\$$$$$$  | $$$$$$  |        $$ |  $$ |$$$$$$$  |   \$  /   $$$$$$\ \$$$$$$  | $$$$$$  |$$ |  $$ |
+ \______/  \______/         \__|  \__|\_______/     \_/    \______| \______/  \______/ \__|  \__|
+`
+
+	fmt.Print("\n\n")
+	fmt.Print(banner)
 	fmt.Print("\n\n")
 }

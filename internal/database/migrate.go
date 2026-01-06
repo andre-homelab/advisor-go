@@ -6,5 +6,8 @@ import (
 )
 
 func AutoMigrate(db *gorm.DB) error {
+	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS pgcrypto;").Error; err != nil {
+		return err
+	}
 	return db.AutoMigrate(&models.Task{})
 }
