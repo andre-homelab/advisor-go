@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/andre-felipe-wonsik-alves/internal/controllers/task"
+	"github.com/andre-felipe-wonsik-alves/internal/controllers/task/repository"
 	"github.com/andre-felipe-wonsik-alves/internal/models"
 )
 
@@ -16,15 +16,15 @@ var (
 )
 
 type Service struct {
-	store task.Store
+	repo repository.DBStore
 }
 
-func NewService(store task.Store) *Service {
-	return &Service{store: store}
+func NewService(repo repository.DBStore) *Service {
+	return &Service{repo: repo}
 }
 
 func (s *Service) List(ctx context.Context) ([]models.Task, error) {
-	tasks, err := s.store.List(ctx)
+	tasks, err := s.repo.List(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao listar tarefas: %w", err)
 	}
@@ -32,7 +32,7 @@ func (s *Service) List(ctx context.Context) ([]models.Task, error) {
 }
 
 func (s *Service) GetByID(ctx context.Context, id string) (*models.Task, error) {
-	task, err := s.store.GetByID(ctx, id)
+	task, err := s.repo.GetByID(ctx, id)
 
 	if err != nil {
 		return nil, ErrTaskNotFound
@@ -52,7 +52,7 @@ func (s *Service) Create(ctx context.Context, title, description string, priorit
 		UpdatedAt:   time.Now(),
 	}
 
-	if err := s.store.Create(ctx, &newTask); err != nil {
+	if err := s.repo.Create(ctx, &newTask); err != nil {
 		return nil, err
 	}
 
@@ -60,11 +60,11 @@ func (s *Service) Create(ctx context.Context, title, description string, priorit
 }
 
 func (s *Service) Patch(ctx context.Context, id string, changes map[string]any) (*models.Task, error) {
-	return s.store.Patch(ctx, id, changes)
+	return s.repo.Patch(ctx, id, changes)
 }
 
 func (s *Service) Delete(ctx context.Context, id string) error {
-	return s.store.Delete(ctx, id)
+	return s.repo.Delete(ctx, id)
 }
 
 func (s *Service) Complete(ctx context.Context, id string) (*models.Task, error) {
@@ -72,7 +72,7 @@ func (s *Service) Complete(ctx context.Context, id string) (*models.Task, error)
 
 	changes["done"] = true
 
-	return s.store.Patch(ctx, id, changes)
+	return s.repo.Patch(ctx, id, changes)
 }
 
 func ParsePriority(s string) (models.Priority, error) {

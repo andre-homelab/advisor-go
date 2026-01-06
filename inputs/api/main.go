@@ -11,7 +11,6 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	_ "github.com/andre-felipe-wonsik-alves/docs"
-	"github.com/andre-felipe-wonsik-alves/internal/controllers/task"
 	"github.com/andre-felipe-wonsik-alves/internal/controllers/task/api"
 	"github.com/andre-felipe-wonsik-alves/internal/controllers/task/repository"
 	"github.com/andre-felipe-wonsik-alves/internal/database"
@@ -45,10 +44,9 @@ func Execute() {
 
 	log.Println("Migration concluída com sucesso!")
 
-	dbStore := repository.NewDBStore(db)
-	taskStore := task.NewDBTaskStore(dbStore)
+	repo := repository.NewDBStore(db)
 
-	taskService := api.NewService(taskStore)
+	taskService := api.NewService(*repo)
 	taskHandler := api.NewTaskHandler(taskService)
 
 	r := chi.NewRouter()
