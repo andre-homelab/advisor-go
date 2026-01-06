@@ -28,7 +28,7 @@ definitions:
         example: ID inválido fornecido
         type: string
     type: object
-  api.UpdateTaskRequest:
+  api.PatchTaskRequest:
     properties:
       description:
         type: string
@@ -45,7 +45,7 @@ definitions:
       title:
         type: string
     type: object
-  task.Priority:
+  models.Priority:
     enum:
     - low
     - medium
@@ -55,9 +55,9 @@ definitions:
     - PriorityLow
     - PriorityMedium
     - PriorityHigh
-  task.Task:
+  models.Task:
     properties:
-      createdAt:
+      created_at:
         type: string
       description:
         type: string
@@ -66,19 +66,17 @@ definitions:
       id:
         type: string
       priority:
-        $ref: '#/definitions/task.Priority'
+        $ref: '#/definitions/models.Priority'
       reminder_at:
         type: string
       title:
         type: string
-      updatedAt:
+      updated_at:
         type: string
     type: object
 host: localhost:8080
 info:
-  contact:
-    email: seu-email@exemplo.com
-    name: Suporte API
+  contact: {}
   description: API REST para gerenciamento de tarefas com lembretes
   license:
     name: MIT
@@ -97,7 +95,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/task.Task'
+              $ref: '#/definitions/models.Task'
             type: array
         "500":
           description: Internal Server Error
@@ -123,7 +121,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/task.Task'
+            $ref: '#/definitions/models.Task'
         "400":
           description: Bad Request
           schema:
@@ -174,7 +172,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/task.Task'
+            $ref: '#/definitions/models.Task'
         "404":
           description: Not Found
           schema:
@@ -186,7 +184,7 @@ paths:
       summary: Buscar tarefa por ID
       tags:
       - tasks
-    put:
+    patch:
       consumes:
       - application/json
       description: Atualiza dados de uma tarefa existente
@@ -201,14 +199,14 @@ paths:
         name: task
         required: true
         schema:
-          $ref: '#/definitions/api.UpdateTaskRequest'
+          $ref: '#/definitions/api.PatchTaskRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/task.Task'
+            $ref: '#/definitions/models.Task'
         "400":
           description: Bad Request
           schema:
@@ -239,7 +237,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/task.Task'
+            $ref: '#/definitions/models.Task'
         "404":
           description: Not Found
           schema:
@@ -249,25 +247,6 @@ paths:
           schema:
             $ref: '#/definitions/api.ErrorResponse'
       summary: Marcar tarefa como concluída
-      tags:
-      - tasks
-  /tasks/due:
-    get:
-      description: Retorna todas as tarefas cujo lembrete já passou
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/task.Task'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/api.ErrorResponse'
-      summary: Listar tarefas vencidas
       tags:
       - tasks
 swagger: "2.0"
