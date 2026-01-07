@@ -11,7 +11,6 @@ func Create(title string, description string, priority models.Priority, reminder
 	now := time.Now()
 
 	newTask := models.Task{
-		ID:          fmt.Sprintf("%d", now.UnixNano()),
 		Title:       title,
 		Description: description,
 		Priority:    priority,

@@ -45,12 +45,10 @@ func Execute() {
 	log.Println("Migration concluída com sucesso!")
 
 	repo := repository.NewDBStore(db)
-
-	taskService := api.NewService(*repo)
+	taskService := api.NewService(repo)
 	taskHandler := api.NewTaskHandler(taskService)
 
 	r := chi.NewRouter()
-
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))

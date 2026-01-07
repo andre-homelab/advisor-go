@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/andre-felipe-wonsik-alves/internal/controllers/task/repository"
 	"github.com/andre-felipe-wonsik-alves/internal/models"
 )
 
@@ -15,18 +14,26 @@ var (
 	ErrInvalidInput = errors.New("dados de entrada inválidos")
 )
 
-type Service struct {
-	repo repository.DBStore
+type Store interface {
+	Create(ctx context.Context, task *models.Task) error
+	GetByID(ctx context.Context, id string) (*models.Task, error)
+	List(ctx context.Context) ([]models.Task, error)
+	Patch(ctx context.Context, id string, changes map[string]any) (*models.Task, error)
+	Delete(ctx context.Context, id string) error
 }
 
-func NewService(repo repository.DBStore) *Service {
+type Service struct {
+	repo Store
+}
+
+func NewService(repo Store) *Service {
 	return &Service{repo: repo}
 }
 
 func (s *Service) List(ctx context.Context) ([]models.Task, error) {
 	tasks, err := s.repo.List(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("erro ao listar tarefas: %w", err)
+		return nil, fmt.Errorf("[ ERRO ] Problema ao listar as Tasks: %w", err)
 	}
 	return tasks, nil
 }
@@ -60,19 +67,35 @@ func (s *Service) Create(ctx context.Context, title, description string, priorit
 }
 
 func (s *Service) Patch(ctx context.Context, id string, changes map[string]any) (*models.Task, error) {
-	return s.repo.Patch(ctx, id, changes)
+	task, err := s.repo.Patch(ctx, id, changes)
+
+	if err != nil {
+		return nil, fmt.Errorf("[ ERRO ] Problema dentro do Patch: %w", err)
+	}
+	return task, nil
 }
 
 func (s *Service) Delete(ctx context.Context, id string) error {
-	return s.repo.Delete(ctx, id)
+	err := s.repo.Delete(ctx, id)
+
+	if err != nil {
+		return fmt.Errorf("[ ERRO ] Problema dentro do Delete: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Service) Complete(ctx context.Context, id string) (*models.Task, error) {
 	changes := map[string]any{}
-
 	changes["done"] = true
 
-	return s.repo.Patch(ctx, id, changes)
+	task, err := s.repo.Patch(ctx, id, changes)
+
+	if err != nil {
+		return nil, fmt.Errorf("[ ERRO ] Problema ao completar tarefa: %w", err)
+	}
+
+	return task, nil
 }
 
 func ParsePriority(s string) (models.Priority, error) {
@@ -85,18 +108,5 @@ func ParsePriority(s string) (models.Priority, error) {
 		return models.PriorityHigh, nil
 	default:
 		return "", ErrInvalidInput
-	}
-}
-
-func PriorityToString(p models.Priority) string {
-	switch p {
-	case models.PriorityLow:
-		return "baixa"
-	case models.PriorityMedium:
-		return "média"
-	case models.PriorityHigh:
-		return "alta"
-	default:
-		return string(p)
 	}
 }
