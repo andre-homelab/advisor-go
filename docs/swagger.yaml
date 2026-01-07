@@ -219,7 +219,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
-      summary: Atualizar tarefa
+      summary: Atualizar campos específicos de uma tarefa
       tags:
       - tasks
   /tasks/{id}/complete:

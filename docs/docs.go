@@ -180,7 +180,7 @@ const docTemplate = `{
                 "tags": [
                     "tasks"
                 ],
-                "summary": "Atualizar tarefa",
+                "summary": "Atualizar campos específicos de uma tarefa",
                 "parameters": [
                     {
                         "type": "string",
