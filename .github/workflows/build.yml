@@ -1,21 +1,55 @@
-name: Build
+name: CI + SonarQube
 
 on:
   push:
-    branches:
-      - main
+    branches: ["main"]
+  workflow_dispatch: {}
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-main
+  cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build and analyze
+  quality-and-sonar:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout (full history for Sonar)
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: SonarSource/sonarqube-scan-action@v6
+
+      - name: Setup Go (with cache)
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Format check (gofmt)
+        run: |
+          test -z "$(gofmt -l .)" || (echo "gofmt needed"; gofmt -l .; exit 1)
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Lint (golangci-lint)
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+          args: --timeout=5m
+
+      - name: Tests (race + coverage)
+        run: |
+          go test ./... -count=1 -race -covermode=atomic -coverprofile=coverage.out
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        with:
+          args: >
+            -Dsonar.go.coverage.reportPaths=coverage.out
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
