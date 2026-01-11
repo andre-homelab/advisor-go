@@ -33,15 +33,18 @@ jobs:
           test -z "$(gofmt -l .)" || (echo "gofmt needed"; gofmt -l .; exit 1)
 
       - name: Vet
+        if: ${{ always() }}
         run: go vet ./...
 
       - name: Lint (golangci-lint)
+        if: ${{ always() }}
         uses: golangci/golangci-lint-action@v9
         with:
           version: latest
           args: --timeout=5m
 
       - name: Tests (race + coverage)
+        if: ${{ always() }}
         run: |
           go test ./... -count=1 -race -covermode=atomic -coverprofile=coverage.out
 
