@@ -1,6 +1,8 @@
 package api
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,8 +14,9 @@ import (
 
 	_ "github.com/andre-felipe-wonsik-alves/docs"
 	"github.com/andre-felipe-wonsik-alves/internal/controllers/task/api"
-	"github.com/andre-felipe-wonsik-alves/internal/controllers/task/repository"
+	taskApi "github.com/andre-felipe-wonsik-alves/internal/controllers/task/api"
 	"github.com/andre-felipe-wonsik-alves/internal/database"
+	"github.com/andre-felipe-wonsik-alves/internal/misc"
 )
 
 // @title           Task Notification API
@@ -27,8 +30,8 @@ import (
 // @host      localhost:8080
 // @BasePath  /api/v1
 
-func Execute() {
-	printBanner()
+func Execute(ctx context.Context, service *taskApi.Service) error {
+	misc.PrintBanner()
 
 	log.Println("Testando conexão com o banco de dados")
 	db, err := database.Connect()
@@ -44,9 +47,7 @@ func Execute() {
 
 	log.Println("Migration concluída com sucesso!")
 
-	repo := repository.NewDBStore(db)
-	taskService := api.NewService(repo)
-	taskHandler := api.NewTaskHandler(taskService)
+	taskHandler := api.NewTaskHandler(service)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -77,25 +78,29 @@ func Execute() {
 	log.Println("Servidor rodando em http://localhost:8080")
 	log.Println("Documentação disponível em http://localhost:8080/swagger/index.html")
 
-	if err := http.ListenAndServe(":8080", r); err != nil {
-		log.Fatal("Erro ao iniciar servidor:", err)
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: r,
 	}
-	fmt.Print("\n\n")
-}
 
-func printBanner() {
-	const banner = `
- $$$$$$\   $$$$$$\           $$$$$$\  $$$$$$$\  $$\    $$\ $$$$$$\  $$$$$$\   $$$$$$\  $$$$$$$\  
-$$  __$$\ $$  __$$\         $$  __$$\ $$  __$$\ $$ |   $$ |\_$$  _|$$  __$$\ $$  __$$\ $$  __$$\ 
-$$ /  \__|$$ /  $$ |        $$ /  $$ |$$ |  $$ |$$ |   $$ |  $$ |  $$ /  \__|$$ /  $$ |$$ |  $$ |
-$$ |$$$$\ $$ |  $$ |$$$$$$\ $$$$$$$$ |$$ |  $$ |\$$\  $$  |  $$ |  \$$$$$$\  $$ |  $$ |$$$$$$$  |
-$$ |\_$$ |$$ |  $$ |\______|$$  __$$ |$$ |  $$ | \$$\$$  /   $$ |   \____$$\ $$ |  $$ |$$  __$$< 
-$$ |  $$ |$$ |  $$ |        $$ |  $$ |$$ |  $$ |  \$$$  /    $$ |  $$\   $$ |$$ |  $$ |$$ |  $$ |
-\$$$$$$  | $$$$$$  |        $$ |  $$ |$$$$$$$  |   \$  /   $$$$$$\ \$$$$$$  | $$$$$$  |$$ |  $$ |
- \______/  \______/         \__|  \__|\_______/     \_/    \______| \______/  \______/ \__|  \__|
-`
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- server.ListenAndServe()
+	}()
+
+	select {
+	case <-ctx.Done():
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			return err
+		}
+	case err := <-errCh:
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			return err
+		}
+	}
 
 	fmt.Print("\n\n")
-	fmt.Print(banner)
-	fmt.Print("\n\n")
+	return nil
 }
