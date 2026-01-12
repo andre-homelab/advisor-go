@@ -1,0 +1,55 @@
+name: Open PR dev -> main when dev PR is merged
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - dev
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: open-pr-dev-to-main
+  cancel-in-progress: false
+
+jobs:
+  open_pr:
+    if: ${{ github.event.pull_request.merged == true }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create PR dev -> main (if not exists)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          BASE="main"
+          HEAD="dev"
+          TITLE="Merge dev into main"
+          BODY="PR automático: dev -> main (gatilho: PR aceito na dev)."
+
+          EXISTING=$(gh pr list \
+            --repo "$REPO" \
+            --base "$BASE" \
+            --head "$HEAD" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [ -n "${EXISTING:-}" ]; then
+            echo "Já existe PR aberto dev -> main (#$EXISTING). Saindo."
+            exit 0
+          fi
+
+          gh pr create \
+            --repo "$REPO" \
+            --base "$BASE" \
+            --head "$HEAD" \
+            --title "$TITLE" \
+            --body "$BODY"
+
+          echo "PR dev -> main criado com sucesso."
