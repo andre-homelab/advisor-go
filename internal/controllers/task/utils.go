@@ -1,20 +1,25 @@
 package task
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/andre-felipe-wonsik-alves/internal/models"
 )
 
-func ParsePriority(input string) models.Priority {
+var ErrInvalidPriority = errors.New("prioridade inválida")
+
+func ParsePriority(input string) (models.Priority, error) {
 	s := strings.ToLower(strings.TrimSpace(input))
 
 	switch s {
-	case "medium", "média":
-		return models.PriorityMedium
+	case "low", "baixa":
+		return models.PriorityLow, nil
+	case "medium", "media", "média":
+		return models.PriorityMedium, nil
 	case "high", "alta":
-		return models.PriorityHigh
+		return models.PriorityHigh, nil
 	default:
-		return models.PriorityLow
+		return "", ErrInvalidPriority
 	}
 }
