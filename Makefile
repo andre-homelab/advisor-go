@@ -1,12 +1,12 @@
 SWAG ?= swag
 
-.PHONY: swagger migrate api dev
+.PHONY: docs migrate api dev
 
-swagger:
+docs:
 	$(SWAG) init -g inputs/api/main.go -o docs || \
 		go run github.com/swaggo/swag/cmd/swag@v1.16.6 init -g inputs/api/main.go -o docs
 
 api:
 	go run . api
 
-dev: swagger api
+dev: docs api
