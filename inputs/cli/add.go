@@ -34,7 +34,10 @@ func NewAddCli(service *taskApi.Service) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			priority := task.ParsePriority(priorityStr)
+			priority, err := task.ParsePriority(priorityStr)
+			if err != nil {
+				return fmt.Errorf("prioridade inválida: %w", err)
+			}
 
 			fmt.Println("\nInforme a data/hora do lembrete no formato:")
 			fmt.Println("  02/01/2006 15:04")

@@ -76,7 +76,11 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	priority := task.ParsePriority(req.Priority)
+	priority, err := task.ParsePriority(req.Priority)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "Prioridade inválida", err)
+		return
+	}
 
 	newTask, err := h.taskService.Create(r.Context(), req.Title, req.Description, priority, req.ReminderAt)
 	if err != nil {
