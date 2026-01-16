@@ -22,7 +22,10 @@ func (s *DBStore) Create(ctx context.Context, t *models.Task) error {
 
 func (s *DBStore) GetByID(ctx context.Context, id string) (*models.Task, error) {
 	var t models.Task
-	err := s.db.WithContext(ctx).First(&t, "id = ?", id).Error
+	err := s.db.WithContext(ctx).
+		Preload("Parent").
+		Preload("Children").
+		First(&t, "id = ?", id).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -35,6 +38,8 @@ func (s *DBStore) GetByID(ctx context.Context, id string) (*models.Task, error) 
 func (s *DBStore) List(ctx context.Context) ([]models.Task, error) {
 	var tasks []models.Task
 	err := s.db.WithContext(ctx).
+		Preload("Parent").
+		Preload("Children").
 		Order("created_at desc").
 		Find(&tasks).Error
 	return tasks, err

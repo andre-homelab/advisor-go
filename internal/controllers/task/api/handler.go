@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/andre-felipe-wonsik-alves/internal/controllers/task"
@@ -22,6 +23,7 @@ type CreateTaskRequest struct {
 	Description string    `json:"description" example:"Apresentar projeto ao time"`
 	Priority    string    `json:"priority" example:"high" enums:"low,medium,high"`
 	ReminderAt  time.Time `json:"reminder_at" example:"2025-12-27T15:00:00Z"`
+	ParentID    *string   `json:"parent_id,omitempty" example:"8f3edff7-f3fe-4ab1-a60a-f35efcdfbf70"`
 }
 
 type PatchTaskRequest struct {
@@ -30,6 +32,7 @@ type PatchTaskRequest struct {
 	Priority    *string    `json:"priority,omitempty" enums:"low,medium,high"`
 	ReminderAt  *time.Time `json:"reminder_at,omitempty"`
 	Done        *bool      `json:"done,omitempty"`
+	ParentID    *string    `json:"parent_id,omitempty"`
 }
 
 type ErrorResponse struct {
@@ -82,8 +85,21 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newTask, err := h.taskService.Create(r.Context(), req.Title, req.Description, priority, req.ReminderAt)
+	if req.ParentID != nil && strings.TrimSpace(*req.ParentID) == "" {
+		respondError(w, http.StatusBadRequest, "parent_id inválido", nil)
+		return
+	}
+
+	newTask, err := h.taskService.CreateWithParent(r.Context(), req.Title, req.Description, priority, req.ReminderAt, req.ParentID)
 	if err != nil {
+		if err == ErrParentTaskNotFound {
+			respondError(w, http.StatusNotFound, "Tarefa pai não encontrada", nil)
+			return
+		}
+		if err == ErrInvalidInput {
+			respondError(w, http.StatusBadRequest, "Dados inválidos", err)
+			return
+		}
 		respondError(w, http.StatusInternalServerError, "Erro ao criar tarefa", err)
 		return
 	}
@@ -158,6 +174,13 @@ func (h *TaskHandler) PatchTask(w http.ResponseWriter, r *http.Request) {
 	if req.ReminderAt != nil {
 		changes["reminderAt"] = *req.ReminderAt
 	}
+	if req.ParentID != nil {
+		if strings.TrimSpace(*req.ParentID) == "" {
+			http.Error(w, "parent_id inválido", http.StatusBadRequest)
+			return
+		}
+		changes["parent_id"] = *req.ParentID
+	}
 
 	if len(changes) == 0 {
 		http.Error(w, "nenhum campo para atualizar", http.StatusBadRequest)
@@ -167,6 +190,14 @@ func (h *TaskHandler) PatchTask(w http.ResponseWriter, r *http.Request) {
 	task, err := h.taskService.Patch(r.Context(), id, changes)
 
 	if err != nil {
+		if err == ErrParentTaskNotFound {
+			http.Error(w, "tarefa pai não encontrada", http.StatusNotFound)
+			return
+		}
+		if err == ErrInvalidInput {
+			http.Error(w, "dados inválidos", http.StatusBadRequest)
+			return
+		}
 		http.Error(w, "erro ao atualizar", http.StatusInternalServerError)
 		return
 	}

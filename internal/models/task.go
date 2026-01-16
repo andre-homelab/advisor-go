@@ -21,6 +21,9 @@ type Task struct {
 	Priority    Priority       `gorm:"type:varchar(10);not null" json:"priority"`
 	ReminderAt  time.Time      `json:"reminder_at"`
 	Done        bool           `gorm:"default:false" json:"done"`
+	ParentID    *string        `gorm:"type:uuid;index" json:"parent_id,omitempty"`
+	Parent      *Task          `gorm:"foreignKey:ParentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"parent,omitempty"`
+	Children    []Task         `gorm:"foreignKey:ParentID;references:ID" json:"children,omitempty"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`

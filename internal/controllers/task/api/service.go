@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	ErrTaskNotFound = errors.New("tarefa não encontrada")
-	ErrInvalidInput = errors.New("dados de entrada inválidos")
+	ErrTaskNotFound       = errors.New("tarefa não encontrada")
+	ErrInvalidInput       = errors.New("dados de entrada inválidos")
+	ErrParentTaskNotFound = errors.New("tarefa pai não encontrada")
 )
 
 type Store interface {
@@ -49,12 +50,30 @@ func (s *Service) GetByID(ctx context.Context, id string) (*models.Task, error) 
 }
 
 func (s *Service) Create(ctx context.Context, title, description string, priority models.Priority, reminderAt time.Time) (*models.Task, error) {
+	return s.CreateWithParent(ctx, title, description, priority, reminderAt, nil)
+}
+
+func (s *Service) CreateWithParent(ctx context.Context, title, description string, priority models.Priority, reminderAt time.Time, parentID *string) (*models.Task, error) {
+	if parentID != nil && *parentID == "" {
+		return nil, ErrInvalidInput
+	}
+	if parentID != nil {
+		parentTask, err := s.repo.GetByID(ctx, *parentID)
+		if err != nil {
+			return nil, fmt.Errorf("[ ERRO ] Problema ao validar tarefa pai: %w", err)
+		}
+		if parentTask == nil {
+			return nil, ErrParentTaskNotFound
+		}
+	}
+
 	newTask := models.Task{
 		Title:       title,
 		Description: description,
 		Priority:    priority,
 		ReminderAt:  reminderAt,
 		Done:        false,
+		ParentID:    parentID,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
@@ -67,6 +86,26 @@ func (s *Service) Create(ctx context.Context, title, description string, priorit
 }
 
 func (s *Service) Patch(ctx context.Context, id string, changes map[string]any) (*models.Task, error) {
+	if value, ok := changes["parent_id"]; ok {
+		parentID, ok := value.(string)
+		if !ok {
+			return nil, ErrInvalidInput
+		}
+		if parentID == "" {
+			return nil, ErrInvalidInput
+		}
+		if parentID == id {
+			return nil, ErrInvalidInput
+		}
+		parentTask, err := s.repo.GetByID(ctx, parentID)
+		if err != nil {
+			return nil, fmt.Errorf("[ ERRO ] Problema ao validar tarefa pai: %w", err)
+		}
+		if parentTask == nil {
+			return nil, ErrParentTaskNotFound
+		}
+	}
+
 	task, err := s.repo.Patch(ctx, id, changes)
 
 	if err != nil {
