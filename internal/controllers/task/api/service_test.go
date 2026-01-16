@@ -11,6 +11,7 @@ import (
 
 type fakeStore struct {
 	createFn func(ctx context.Context, task *models.Task) error
+	getFn    func(ctx context.Context, id string) (*models.Task, error)
 }
 
 func (f *fakeStore) Create(ctx context.Context, task *models.Task) error {
@@ -21,7 +22,10 @@ func (f *fakeStore) Create(ctx context.Context, task *models.Task) error {
 }
 
 func (f *fakeStore) GetByID(ctx context.Context, id string) (*models.Task, error) {
-	return nil, nil
+	if f.getFn == nil {
+		return nil, nil
+	}
+	return f.getFn(ctx, id)
 }
 
 func (f *fakeStore) List(ctx context.Context) ([]models.Task, error) {
@@ -66,7 +70,17 @@ func TestServiceCreate(t *testing.T) {
 			store := &fakeStore{
 				createFn: func(ctx context.Context, task *models.Task) error {
 					captured = task
+					task.ID = "task-1"
 					return tt.createErr
+				},
+				getFn: func(ctx context.Context, id string) (*models.Task, error) {
+					if captured == nil {
+						t.Fatal("expected Create to run before GetByID")
+					}
+					if id != captured.ID {
+						t.Fatalf("expected GetByID id %q, got %q", captured.ID, id)
+					}
+					return captured, nil
 				},
 			}
 			service := NewService(store)
@@ -98,7 +112,7 @@ func TestServiceCreate(t *testing.T) {
 				t.Fatal("expected repository Create to receive task")
 			}
 			if task != captured {
-				t.Fatalf("expected returned task to match repository argument")
+				t.Fatalf("expected returned task to match repository result")
 			}
 			if task.Title != "titulo" {
 				t.Fatalf("expected title %q, got %q", "titulo", task.Title)
@@ -129,4 +143,119 @@ func TestServiceCreate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestServiceCreateWithParent(t *testing.T) {
+	t.Parallel()
+
+	parentID := "parent-1"
+	childID := "child-1"
+
+	t.Run("returns task with parent", func(t *testing.T) {
+		t.Parallel()
+
+		store := &fakeStore{
+			createFn: func(ctx context.Context, task *models.Task) error {
+				task.ID = childID
+				return nil
+			},
+			getFn: func(ctx context.Context, id string) (*models.Task, error) {
+				if id == parentID {
+					return &models.Task{ID: parentID, Title: "Parent"}, nil
+				}
+				if id == childID {
+					return &models.Task{
+						ID:       childID,
+						Title:    "Child",
+						ParentID: &parentID,
+						Parent:   &models.Task{ID: parentID, Title: "Parent"},
+					}, nil
+				}
+				return nil, nil
+			},
+		}
+		service := NewService(store)
+
+		task, err := service.CreateWithParent(context.Background(), "Child", "desc", models.PriorityLow, time.Time{}, &parentID)
+
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if task == nil {
+			t.Fatal("expected task, got nil")
+		}
+		if task.Parent == nil || task.Parent.ID != parentID {
+			t.Fatalf("expected parent %q, got %+v", parentID, task.Parent)
+		}
+	})
+
+	t.Run("parent not found", func(t *testing.T) {
+		t.Parallel()
+
+		store := &fakeStore{
+			getFn: func(ctx context.Context, id string) (*models.Task, error) {
+				return nil, nil
+			},
+		}
+		service := NewService(store)
+
+		task, err := service.CreateWithParent(context.Background(), "Child", "desc", models.PriorityLow, time.Time{}, &parentID)
+
+		if !errors.Is(err, ErrParentTaskNotFound) {
+			t.Fatalf("expected ErrParentTaskNotFound, got %v", err)
+		}
+		if task != nil {
+			t.Fatalf("expected nil task, got %+v", task)
+		}
+	})
+}
+
+func TestServiceListSubtasks(t *testing.T) {
+	t.Parallel()
+
+	t.Run("not found", func(t *testing.T) {
+		t.Parallel()
+
+		store := &fakeStore{
+			getFn: func(ctx context.Context, id string) (*models.Task, error) {
+				return nil, nil
+			},
+		}
+		service := NewService(store)
+
+		tasks, err := service.ListSubtasks(context.Background(), "parent-1")
+
+		if !errors.Is(err, ErrTaskNotFound) {
+			t.Fatalf("expected ErrTaskNotFound, got %v", err)
+		}
+		if tasks != nil {
+			t.Fatalf("expected nil subtasks, got %+v", tasks)
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		store := &fakeStore{
+			getFn: func(ctx context.Context, id string) (*models.Task, error) {
+				return &models.Task{
+					ID: id,
+					Children: []models.Task{
+						{ID: "child-1"},
+						{ID: "child-2"},
+					},
+				}, nil
+			},
+		}
+		service := NewService(store)
+
+		tasks, err := service.ListSubtasks(context.Background(), "parent-1")
+
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(tasks) != 2 {
+			t.Fatalf("expected 2 subtasks, got %d", len(tasks))
+		}
+	})
 }

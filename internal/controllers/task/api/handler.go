@@ -57,6 +57,31 @@ func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, tasks)
 }
 
+// @Summary     Listar subtarefas de uma tarefa
+// @Description Retorna todas as subtarefas vinculadas a uma tarefa pai
+// @Tags        tasks
+// @Produce     json
+// @Param       id path string true "ID da tarefa pai"
+// @Success     200 {array} models.Task
+// @Failure     404 {object} ErrorResponse
+// @Failure     500 {object} ErrorResponse
+// @Router      /task/{id}/subtasks [get]
+func (h *TaskHandler) ListSubtasks(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	subtasks, err := h.taskService.ListSubtasks(r.Context(), id)
+	if err != nil {
+		if err == ErrTaskNotFound {
+			respondError(w, http.StatusNotFound, "Tarefa não encontrada", nil)
+			return
+		}
+		respondError(w, http.StatusInternalServerError, "Erro ao listar subtarefas", err)
+		return
+	}
+
+	respondJSON(w, http.StatusOK, subtasks)
+}
+
 // @Summary     Criar nova tarefa
 // @Description Adiciona uma nova tarefa ao sistema
 // @Tags        tasks

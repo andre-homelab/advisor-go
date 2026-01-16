@@ -39,6 +39,17 @@ func (s *Service) List(ctx context.Context) ([]models.Task, error) {
 	return tasks, nil
 }
 
+func (s *Service) ListSubtasks(ctx context.Context, parentID string) ([]models.Task, error) {
+	parent, err := s.repo.GetByID(ctx, parentID)
+	if err != nil || parent == nil {
+		return nil, ErrTaskNotFound
+	}
+	if parent.Children == nil {
+		return []models.Task{}, nil
+	}
+	return parent.Children, nil
+}
+
 func (s *Service) GetByID(ctx context.Context, id string) (*models.Task, error) {
 	task, err := s.repo.GetByID(ctx, id)
 
@@ -58,12 +69,8 @@ func (s *Service) CreateWithParent(ctx context.Context, title, description strin
 		return nil, ErrInvalidInput
 	}
 	if parentID != nil {
-		parentTask, err := s.repo.GetByID(ctx, *parentID)
-		if err != nil {
-			return nil, fmt.Errorf("[ ERRO ] Problema ao validar tarefa pai: %w", err)
-		}
-		if parentTask == nil {
-			return nil, ErrParentTaskNotFound
+		if _, err := s.loadParentTask(ctx, *parentID, ""); err != nil {
+			return nil, err
 		}
 	}
 
@@ -82,7 +89,14 @@ func (s *Service) CreateWithParent(ctx context.Context, title, description strin
 		return nil, err
 	}
 
-	return &newTask, nil
+	createdTask, err := s.repo.GetByID(ctx, newTask.ID)
+	if err != nil {
+		return nil, fmt.Errorf("[ ERRO ] Problema ao carregar task criada: %w", err)
+	}
+	if createdTask == nil {
+		return nil, ErrTaskNotFound
+	}
+	return createdTask, nil
 }
 
 func (s *Service) Patch(ctx context.Context, id string, changes map[string]any) (*models.Task, error) {
@@ -91,18 +105,8 @@ func (s *Service) Patch(ctx context.Context, id string, changes map[string]any) 
 		if !ok {
 			return nil, ErrInvalidInput
 		}
-		if parentID == "" {
-			return nil, ErrInvalidInput
-		}
-		if parentID == id {
-			return nil, ErrInvalidInput
-		}
-		parentTask, err := s.repo.GetByID(ctx, parentID)
-		if err != nil {
-			return nil, fmt.Errorf("[ ERRO ] Problema ao validar tarefa pai: %w", err)
-		}
-		if parentTask == nil {
-			return nil, ErrParentTaskNotFound
+		if _, err := s.loadParentTask(ctx, parentID, id); err != nil {
+			return nil, err
 		}
 	}
 
@@ -112,6 +116,23 @@ func (s *Service) Patch(ctx context.Context, id string, changes map[string]any) 
 		return nil, fmt.Errorf("[ ERRO ] Problema dentro do Patch: %w", err)
 	}
 	return task, nil
+}
+
+func (s *Service) loadParentTask(ctx context.Context, parentID, currentID string) (*models.Task, error) {
+	if parentID == "" {
+		return nil, ErrInvalidInput
+	}
+	if currentID != "" && parentID == currentID {
+		return nil, ErrInvalidInput
+	}
+	parentTask, err := s.repo.GetByID(ctx, parentID)
+	if err != nil {
+		return nil, fmt.Errorf("[ ERRO ] Problema ao validar tarefa pai: %w", err)
+	}
+	if parentTask == nil {
+		return nil, ErrParentTaskNotFound
+	}
+	return parentTask, nil
 }
 
 func (s *Service) Delete(ctx context.Context, id string) error {

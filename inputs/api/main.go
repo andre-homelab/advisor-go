@@ -68,6 +68,9 @@ func Execute(ctx context.Context, service *taskApi.Service) error {
 			r.Delete("/{id}", taskHandler.DeleteTask)
 			r.Patch("/{id}/complete", taskHandler.CompleteTask)
 		})
+		r.Route("/task", func(r chi.Router) {
+			r.Get("/{id}/subtasks", taskHandler.ListSubtasks)
+		})
 	})
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {

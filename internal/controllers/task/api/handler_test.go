@@ -131,6 +131,62 @@ func TestTaskHandler_ListTasks(t *testing.T) {
 	})
 }
 
+func TestTaskHandler_ListSubtasks(t *testing.T) {
+	t.Run("not found", func(t *testing.T) {
+		store := &stubStore{
+			getFn: func(ctx context.Context, id string) (*models.Task, error) {
+				return nil, nil
+			},
+		}
+		handler := NewTaskHandler(NewService(store))
+
+		rec := httptest.NewRecorder()
+		req := newRequestWithID(http.MethodGet, "/task/1/subtasks", "1", bytes.NewReader(nil))
+
+		handler.ListSubtasks(rec, req)
+
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("status = %d, want %d", rec.Code, http.StatusNotFound)
+		}
+		errResp := decodeError(t, rec)
+		if errResp.Error != "Tarefa não encontrada" {
+			t.Fatalf("error = %q, want %q", errResp.Error, "Tarefa não encontrada")
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		parentID := "parent-1"
+		store := &stubStore{
+			getFn: func(ctx context.Context, id string) (*models.Task, error) {
+				return &models.Task{
+					ID: parentID,
+					Children: []models.Task{
+						{ID: "child-1", Title: "A"},
+						{ID: "child-2", Title: "B"},
+					},
+				}, nil
+			},
+		}
+		handler := NewTaskHandler(NewService(store))
+
+		rec := httptest.NewRecorder()
+		req := newRequestWithID(http.MethodGet, "/task/parent-1/subtasks", parentID, bytes.NewReader(nil))
+
+		handler.ListSubtasks(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+		}
+		var got []models.Task
+		if err := json.NewDecoder(rec.Body).Decode(&got); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+		if len(got) != 2 || got[0].ID != "child-1" || got[1].ID != "child-2" {
+			t.Fatalf("unexpected subtasks: %+v", got)
+		}
+	})
+}
+
 func TestTaskHandler_CreateTask(t *testing.T) {
 	t.Run("invalid json", func(t *testing.T) {
 		store := &stubStore{}
@@ -191,6 +247,9 @@ func TestTaskHandler_CreateTask(t *testing.T) {
 			createFn: func(ctx context.Context, task *models.Task) error {
 				task.ID = "task-1"
 				return nil
+			},
+			getFn: func(ctx context.Context, id string) (*models.Task, error) {
+				return &models.Task{ID: id, Title: "A"}, nil
 			},
 		}
 		handler := NewTaskHandler(NewService(store))
