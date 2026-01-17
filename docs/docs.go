@@ -20,50 +20,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/task/{id}/subtasks": {
-            "get": {
-                "description": "Retorna todas as subtarefas vinculadas a uma tarefa pai",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tasks"
-                ],
-                "summary": "Listar subtarefas de uma tarefa",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID da tarefa pai",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Task"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/tasks": {
             "get": {
                 "description": "Retorna lista de todas as tarefas cadastradas",
@@ -71,7 +27,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "tasks"
+                    "Tasks"
                 ],
                 "summary": "Listar todas as tarefas",
                 "responses": {
@@ -101,7 +57,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "tasks"
+                    "Tasks"
                 ],
                 "summary": "Criar nova tarefa",
                 "parameters": [
@@ -144,7 +100,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "tasks"
+                    "Tasks"
                 ],
                 "summary": "Buscar tarefa por ID",
                 "parameters": [
@@ -183,7 +139,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "tasks"
+                    "Tasks"
                 ],
                 "summary": "Deletar tarefa",
                 "parameters": [
@@ -222,7 +178,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "tasks"
+                    "Tasks"
                 ],
                 "summary": "Atualizar campos específicos de uma tarefa",
                 "parameters": [
@@ -278,7 +234,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "tasks"
+                    "Tasks"
                 ],
                 "summary": "Marcar tarefa como concluída",
                 "parameters": [
@@ -295,6 +251,50 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.Task"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks/{id}/subtasks": {
+            "get": {
+                "description": "Retorna todas as subtarefas vinculadas a uma tarefa pai",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Listar subtarefas de uma tarefa",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID da tarefa pai",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Task"
+                            }
                         }
                     },
                     "404": {

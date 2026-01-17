@@ -67,9 +67,8 @@ func Execute(ctx context.Context, service *taskApi.Service) error {
 			r.Patch("/{id}", taskHandler.PatchTask)
 			r.Delete("/{id}", taskHandler.DeleteTask)
 			r.Patch("/{id}/complete", taskHandler.CompleteTask)
-		})
-		r.Route("/task", func(r chi.Router) {
 			r.Get("/{id}/subtasks", taskHandler.ListSubtasks)
+
 		})
 	})
 

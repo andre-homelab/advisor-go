@@ -42,7 +42,7 @@ type ErrorResponse struct {
 
 // @Summary     Listar todas as tarefas
 // @Description Retorna lista de todas as tarefas cadastradas
-// @Tags        tasks
+// @Tags        Tasks
 // @Produce     json
 // @Success     200 {array} models.Task
 // @Failure     500 {object} ErrorResponse
@@ -59,13 +59,13 @@ func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 
 // @Summary     Listar subtarefas de uma tarefa
 // @Description Retorna todas as subtarefas vinculadas a uma tarefa pai
-// @Tags        tasks
+// @Tags        Tasks
 // @Produce     json
 // @Param       id path string true "ID da tarefa pai"
 // @Success     200 {array} models.Task
 // @Failure     404 {object} ErrorResponse
 // @Failure     500 {object} ErrorResponse
-// @Router      /task/{id}/subtasks [get]
+// @Router      /tasks/{id}/subtasks [get]
 func (h *TaskHandler) ListSubtasks(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
@@ -84,7 +84,7 @@ func (h *TaskHandler) ListSubtasks(w http.ResponseWriter, r *http.Request) {
 
 // @Summary     Criar nova tarefa
 // @Description Adiciona uma nova tarefa ao sistema
-// @Tags        tasks
+// @Tags        Tasks
 // @Accept      json
 // @Produce     json
 // @Param       task body CreateTaskRequest true "Dados da tarefa"
@@ -134,7 +134,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 // @Summary     Buscar tarefa por ID
 // @Description Retorna uma tarefa específica pelo ID
-// @Tags        tasks
+// @Tags        Tasks
 // @Produce     json
 // @Param       id path string true "ID da tarefa"
 // @Success     200 {object} models.Task
@@ -160,7 +160,7 @@ func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 
 // @Summary     Atualizar campos específicos de uma tarefa
 // @Description Atualiza dados de uma tarefa existente
-// @Tags        tasks
+// @Tags        Tasks
 // @Accept      json
 // @Produce     json
 // @Param       id path string true "ID da tarefa"
@@ -237,7 +237,7 @@ func (h *TaskHandler) PatchTask(w http.ResponseWriter, r *http.Request) {
 
 // @Summary     Deletar tarefa
 // @Description Remove uma tarefa do sistema
-// @Tags        tasks
+// @Tags        Tasks
 // @Produce     json
 // @Param       id path string true "ID da tarefa"
 // @Success     204 "Tarefa removida com sucesso"
@@ -262,7 +262,7 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 
 // @Summary     Marcar tarefa como concluída
 // @Description Marca uma tarefa específica como concluída
-// @Tags        tasks
+// @Tags        Tasks
 // @Produce     json
 // @Param       id path string true "ID da tarefa"
 // @Success     200 {object} models.Task
@@ -287,7 +287,7 @@ func (h *TaskHandler) CompleteTask(w http.ResponseWriter, r *http.Request) {
 
 // @Summary     Listar tarefas vencidas
 // @Description Retorna todas as tarefas cujo lembrete já passou
-// @Tags        tasks
+// @Tags        Tasks
 // @Produce     json
 // @Success     200 {array} models.Task
 // @Failure     500 {object} ErrorResponse

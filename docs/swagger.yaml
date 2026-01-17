@@ -98,35 +98,6 @@ info:
   title: Task Notification API
   version: "1.0"
 paths:
-  /task/{id}/subtasks:
-    get:
-      description: Retorna todas as subtarefas vinculadas a uma tarefa pai
-      parameters:
-      - description: ID da tarefa pai
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.Task'
-            type: array
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/api.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/api.ErrorResponse'
-      summary: Listar subtarefas de uma tarefa
-      tags:
-      - tasks
   /tasks:
     get:
       description: Retorna lista de todas as tarefas cadastradas
@@ -145,7 +116,7 @@ paths:
             $ref: '#/definitions/api.ErrorResponse'
       summary: Listar todas as tarefas
       tags:
-      - tasks
+      - Tasks
     post:
       consumes:
       - application/json
@@ -174,7 +145,7 @@ paths:
             $ref: '#/definitions/api.ErrorResponse'
       summary: Criar nova tarefa
       tags:
-      - tasks
+      - Tasks
   /tasks/{id}:
     delete:
       description: Remove uma tarefa do sistema
@@ -199,7 +170,7 @@ paths:
             $ref: '#/definitions/api.ErrorResponse'
       summary: Deletar tarefa
       tags:
-      - tasks
+      - Tasks
     get:
       description: Retorna uma tarefa específica pelo ID
       parameters:
@@ -225,7 +196,7 @@ paths:
             $ref: '#/definitions/api.ErrorResponse'
       summary: Buscar tarefa por ID
       tags:
-      - tasks
+      - Tasks
     patch:
       consumes:
       - application/json
@@ -263,7 +234,7 @@ paths:
             $ref: '#/definitions/api.ErrorResponse'
       summary: Atualizar campos específicos de uma tarefa
       tags:
-      - tasks
+      - Tasks
   /tasks/{id}/complete:
     patch:
       description: Marca uma tarefa específica como concluída
@@ -290,5 +261,34 @@ paths:
             $ref: '#/definitions/api.ErrorResponse'
       summary: Marcar tarefa como concluída
       tags:
-      - tasks
+      - Tasks
+  /tasks/{id}/subtasks:
+    get:
+      description: Retorna todas as subtarefas vinculadas a uma tarefa pai
+      parameters:
+      - description: ID da tarefa pai
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Task'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Listar subtarefas de uma tarefa
+      tags:
+      - Tasks
 swagger: "2.0"
