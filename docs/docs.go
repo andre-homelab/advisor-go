@@ -27,7 +27,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "tasks"
+                    "Tasks"
                 ],
                 "summary": "Listar todas as tarefas",
                 "responses": {
@@ -57,7 +57,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "tasks"
+                    "Tasks"
                 ],
                 "summary": "Criar nova tarefa",
                 "parameters": [
@@ -100,7 +100,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "tasks"
+                    "Tasks"
                 ],
                 "summary": "Buscar tarefa por ID",
                 "parameters": [
@@ -139,7 +139,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "tasks"
+                    "Tasks"
                 ],
                 "summary": "Deletar tarefa",
                 "parameters": [
@@ -178,7 +178,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "tasks"
+                    "Tasks"
                 ],
                 "summary": "Atualizar campos específicos de uma tarefa",
                 "parameters": [
@@ -234,7 +234,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "tasks"
+                    "Tasks"
                 ],
                 "summary": "Marcar tarefa como concluída",
                 "parameters": [
@@ -267,6 +267,50 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/tasks/{id}/subtasks": {
+            "get": {
+                "description": "Retorna todas as subtarefas vinculadas a uma tarefa pai",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Listar subtarefas de uma tarefa",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID da tarefa pai",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Task"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -276,6 +320,10 @@ const docTemplate = `{
                 "description": {
                     "type": "string",
                     "example": "Apresentar projeto ao time"
+                },
+                "parent_id": {
+                    "type": "string",
+                    "example": "8f3edff7-f3fe-4ab1-a60a-f35efcdfbf70"
                 },
                 "priority": {
                     "type": "string",
@@ -318,6 +366,9 @@ const docTemplate = `{
                 "done": {
                     "type": "boolean"
                 },
+                "parent_id": {
+                    "type": "string"
+                },
                 "priority": {
                     "type": "string",
                     "enum": [
@@ -350,6 +401,12 @@ const docTemplate = `{
         "models.Task": {
             "type": "object",
             "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Task"
+                    }
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -360,6 +417,12 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "parent": {
+                    "$ref": "#/definitions/models.Task"
+                },
+                "parent_id": {
                     "type": "string"
                 },
                 "priority": {

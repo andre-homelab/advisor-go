@@ -9,4 +9,7 @@ docs:
 api:
 	go run . api
 
-dev: docs api
+compose:
+	docker compose up -d
+
+dev: compose docs api 
