@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/andre-felipe-wonsik-alves/internal/controllers/task"
@@ -22,6 +23,7 @@ type CreateTaskRequest struct {
 	Description string    `json:"description" example:"Apresentar projeto ao time"`
 	Priority    string    `json:"priority" example:"high" enums:"low,medium,high"`
 	ReminderAt  time.Time `json:"reminder_at" example:"2025-12-27T15:00:00Z"`
+	ParentID    *string   `json:"parent_id,omitempty" example:"8f3edff7-f3fe-4ab1-a60a-f35efcdfbf70"`
 }
 
 type PatchTaskRequest struct {
@@ -30,6 +32,7 @@ type PatchTaskRequest struct {
 	Priority    *string    `json:"priority,omitempty" enums:"low,medium,high"`
 	ReminderAt  *time.Time `json:"reminder_at,omitempty"`
 	Done        *bool      `json:"done,omitempty"`
+	ParentID    *string    `json:"parent_id,omitempty"`
 }
 
 type ErrorResponse struct {
@@ -39,7 +42,7 @@ type ErrorResponse struct {
 
 // @Summary     Listar todas as tarefas
 // @Description Retorna lista de todas as tarefas cadastradas
-// @Tags        tasks
+// @Tags        Tasks
 // @Produce     json
 // @Success     200 {array} models.Task
 // @Failure     500 {object} ErrorResponse
@@ -54,9 +57,34 @@ func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, tasks)
 }
 
+// @Summary     Listar subtarefas de uma tarefa
+// @Description Retorna todas as subtarefas vinculadas a uma tarefa pai
+// @Tags        Tasks
+// @Produce     json
+// @Param       id path string true "ID da tarefa pai"
+// @Success     200 {array} models.Task
+// @Failure     404 {object} ErrorResponse
+// @Failure     500 {object} ErrorResponse
+// @Router      /tasks/{id}/subtasks [get]
+func (h *TaskHandler) ListSubtasks(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	subtasks, err := h.taskService.ListSubtasks(r.Context(), id)
+	if err != nil {
+		if err == ErrTaskNotFound {
+			respondError(w, http.StatusNotFound, "Tarefa não encontrada", nil)
+			return
+		}
+		respondError(w, http.StatusInternalServerError, "Erro ao listar subtarefas", err)
+		return
+	}
+
+	respondJSON(w, http.StatusOK, subtasks)
+}
+
 // @Summary     Criar nova tarefa
 // @Description Adiciona uma nova tarefa ao sistema
-// @Tags        tasks
+// @Tags        Tasks
 // @Accept      json
 // @Produce     json
 // @Param       task body CreateTaskRequest true "Dados da tarefa"
@@ -82,8 +110,21 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newTask, err := h.taskService.Create(r.Context(), req.Title, req.Description, priority, req.ReminderAt)
+	if req.ParentID != nil && strings.TrimSpace(*req.ParentID) == "" {
+		respondError(w, http.StatusBadRequest, "parent_id inválido", nil)
+		return
+	}
+
+	newTask, err := h.taskService.CreateWithParent(r.Context(), req.Title, req.Description, priority, req.ReminderAt, req.ParentID)
 	if err != nil {
+		if err == ErrParentTaskNotFound {
+			respondError(w, http.StatusNotFound, "Tarefa pai não encontrada", nil)
+			return
+		}
+		if err == ErrInvalidInput {
+			respondError(w, http.StatusBadRequest, "Dados inválidos", err)
+			return
+		}
 		respondError(w, http.StatusInternalServerError, "Erro ao criar tarefa", err)
 		return
 	}
@@ -93,7 +134,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 // @Summary     Buscar tarefa por ID
 // @Description Retorna uma tarefa específica pelo ID
-// @Tags        tasks
+// @Tags        Tasks
 // @Produce     json
 // @Param       id path string true "ID da tarefa"
 // @Success     200 {object} models.Task
@@ -119,7 +160,7 @@ func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 
 // @Summary     Atualizar campos específicos de uma tarefa
 // @Description Atualiza dados de uma tarefa existente
-// @Tags        tasks
+// @Tags        Tasks
 // @Accept      json
 // @Produce     json
 // @Param       id path string true "ID da tarefa"
@@ -158,6 +199,13 @@ func (h *TaskHandler) PatchTask(w http.ResponseWriter, r *http.Request) {
 	if req.ReminderAt != nil {
 		changes["reminderAt"] = *req.ReminderAt
 	}
+	if req.ParentID != nil {
+		if strings.TrimSpace(*req.ParentID) == "" {
+			http.Error(w, "parent_id inválido", http.StatusBadRequest)
+			return
+		}
+		changes["parent_id"] = *req.ParentID
+	}
 
 	if len(changes) == 0 {
 		http.Error(w, "nenhum campo para atualizar", http.StatusBadRequest)
@@ -167,6 +215,14 @@ func (h *TaskHandler) PatchTask(w http.ResponseWriter, r *http.Request) {
 	task, err := h.taskService.Patch(r.Context(), id, changes)
 
 	if err != nil {
+		if err == ErrParentTaskNotFound {
+			http.Error(w, "tarefa pai não encontrada", http.StatusNotFound)
+			return
+		}
+		if err == ErrInvalidInput {
+			http.Error(w, "dados inválidos", http.StatusBadRequest)
+			return
+		}
 		http.Error(w, "erro ao atualizar", http.StatusInternalServerError)
 		return
 	}
@@ -181,7 +237,7 @@ func (h *TaskHandler) PatchTask(w http.ResponseWriter, r *http.Request) {
 
 // @Summary     Deletar tarefa
 // @Description Remove uma tarefa do sistema
-// @Tags        tasks
+// @Tags        Tasks
 // @Produce     json
 // @Param       id path string true "ID da tarefa"
 // @Success     204 "Tarefa removida com sucesso"
@@ -206,7 +262,7 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 
 // @Summary     Marcar tarefa como concluída
 // @Description Marca uma tarefa específica como concluída
-// @Tags        tasks
+// @Tags        Tasks
 // @Produce     json
 // @Param       id path string true "ID da tarefa"
 // @Success     200 {object} models.Task
@@ -231,7 +287,7 @@ func (h *TaskHandler) CompleteTask(w http.ResponseWriter, r *http.Request) {
 
 // @Summary     Listar tarefas vencidas
 // @Description Retorna todas as tarefas cujo lembrete já passou
-// @Tags        tasks
+// @Tags        Tasks
 // @Produce     json
 // @Success     200 {array} models.Task
 // @Failure     500 {object} ErrorResponse
